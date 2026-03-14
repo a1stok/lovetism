@@ -41,7 +41,7 @@ export function UpdatePasswordForm() {
 
   if (success) {
     return (
-      <div className="max-w-md w-full mx-auto p-8 bg-[var(--cream)] rounded-xl shadow-lg border border-ink/5">
+      <div className="max-w-md w-full mx-auto p-8 bg-cream rounded-xl shadow-lg border border-ink/5">
         <div className="text-center space-y-6">
           <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
             <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -64,7 +64,7 @@ export function UpdatePasswordForm() {
   }
 
   return (
-    <div className="max-w-md w-full mx-auto p-8 bg-[var(--cream)] rounded-xl shadow-lg border border-ink/5">
+    <div className="max-w-md w-full mx-auto p-8 bg-cream rounded-xl shadow-lg border border-ink/5">
       <div className="text-center mb-8">
         <h2 className="font-serif text-3xl font-light text-ink mb-2">Create New Password</h2>
         <p className="font-mono text-[0.7rem] uppercase text-ink-muted/70 tracking-tight">

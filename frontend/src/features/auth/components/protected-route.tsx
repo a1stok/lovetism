@@ -12,7 +12,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[var(--cream)] gap-3">
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-cream gap-3">
         <LoadingSpinner className="h-8 w-8 animate-spin text-mauve" />
         <p className="font-mono text-[0.6rem] uppercase tracking-widest text-ink-muted/40">Checking session…</p>
       </div>
@@ -24,7 +24,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (!session) {
     void navigate({ to: '/', replace: true })
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[var(--cream)] gap-3">
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-cream gap-3">
         <LoadingSpinner className="h-8 w-8 animate-spin text-mauve" />
         <p className="font-mono text-[0.6rem] uppercase tracking-widest text-ink-muted/40">Redirecting…</p>
       </div>

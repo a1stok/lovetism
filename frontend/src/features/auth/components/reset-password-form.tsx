@@ -52,7 +52,7 @@ export function ResetPasswordForm({ onBack }: ResetPasswordFormProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-ink">
       <div className="space-y-2">
         <DialogDescription className="font-mono text-[0.65rem] uppercase text-ink-muted/70">
           Enter your email and we'll send you a link to reset your password.
@@ -75,12 +75,12 @@ export function ResetPasswordForm({ onBack }: ResetPasswordFormProps) {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
             required
-            className="h-10 border-ink/10 bg-transparent rounded-sm font-mono text-[0.85rem]"
+            className="h-10 border-ink/10 bg-cream/50 rounded-sm font-mono text-[0.85rem] text-ink placeholder:text-ink-muted/60"
           />
         </div>
         <Button
           type="submit"
-          className="w-full mt-2 font-mono text-[0.72rem] uppercase tracking-editorial h-11 bg-mauve text-white hover:bg-dusty-rose transition-colors"
+          className="w-full mt-2 font-mono text-[0.72rem] uppercase tracking-editorial h-11 bg-mauve text-cream hover:bg-dusty-rose transition-colors"
           disabled={isLoading}
         >
           {isLoading ? <LoadingSpinner /> : 'Send Reset Link'}

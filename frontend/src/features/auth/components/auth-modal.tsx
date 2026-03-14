@@ -42,7 +42,7 @@ export function AuthModal({ isOpen, onClose, onSuccess, defaultTab = 'login' }: 
   return (
     <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
       <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden border-none bg-transparent">
-        <div className="flex h-[550px] w-full overflow-hidden rounded-xl bg-[var(--cream)] shadow-2xl">
+        <div className="flex h-[550px] w-full overflow-hidden rounded-xl bg-cream shadow-2xl text-ink dark:bg-cream dark:text-ink">
           {/* Visual Side */}
           <div className="hidden md:flex md:w-[45%] relative overflow-hidden bg-ink">
             <img
@@ -73,10 +73,10 @@ export function AuthModal({ isOpen, onClose, onSuccess, defaultTab = 'login' }: 
             <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as 'login' | 'register' | 'reset')} className="w-full">
               {activeTab !== 'reset' && (
                 <TabsList className="grid w-full grid-cols-2 mb-8 bg-ink/5 p-1 rounded-sm">
-                  <TabsTrigger value="login" className="font-mono text-[0.7rem] uppercase tracking-editorial h-8">
+                  <TabsTrigger value="login" className="font-mono text-[0.7rem] uppercase tracking-editorial h-8 text-ink-muted data-[state=active]:bg-cream data-[state=active]:text-ink data-[state=active]:shadow-sm">
                     Login
                   </TabsTrigger>
-                  <TabsTrigger value="register" className="font-mono text-[0.7rem] uppercase tracking-editorial h-8">
+                  <TabsTrigger value="register" className="font-mono text-[0.7rem] uppercase tracking-editorial h-8 text-ink-muted data-[state=active]:bg-cream data-[state=active]:text-ink data-[state=active]:shadow-sm">
                     Register
                   </TabsTrigger>
                 </TabsList>

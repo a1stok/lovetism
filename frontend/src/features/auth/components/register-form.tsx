@@ -72,7 +72,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-ink">
       {error && (
         <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-sm">
           <p className="text-[0.7rem] font-mono text-red-600 uppercase tracking-tight">{error}</p>
@@ -88,7 +88,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               required
-              className="h-10 border-ink/10 bg-transparent rounded-sm font-mono text-[0.85rem]"
+              className="h-10 border-ink/10 bg-cream/50 rounded-sm font-mono text-[0.85rem] text-ink placeholder:text-ink-muted/60"
             />
           </div>
           <div className="space-y-2">
@@ -98,7 +98,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               required
-              className="h-10 border-ink/10 bg-transparent rounded-sm font-mono text-[0.85rem]"
+              className="h-10 border-ink/10 bg-cream/50 rounded-sm font-mono text-[0.85rem] text-ink placeholder:text-ink-muted/60"
             />
           </div>
         </div>
@@ -112,7 +112,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
             required
-            className="h-10 border-ink/10 bg-transparent rounded-sm font-mono text-[0.85rem]"
+            className="h-10 border-ink/10 bg-cream/50 rounded-sm font-mono text-[0.85rem] text-ink placeholder:text-ink-muted/60"
           />
         </div>
         <div className="space-y-2">
@@ -123,12 +123,12 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="h-10 border-ink/10 bg-transparent rounded-sm font-mono text-[0.85rem]"
+            className="h-10 border-ink/10 bg-cream/50 rounded-sm font-mono text-[0.85rem] text-ink placeholder:text-ink-muted/60"
           />
         </div>
         <Button
           type="submit"
-          className="w-full mt-2 font-mono text-[0.72rem] uppercase tracking-editorial h-11 bg-mauve text-white hover:bg-dusty-rose transition-colors"
+          className="w-full mt-2 font-mono text-[0.72rem] uppercase tracking-editorial h-11 bg-mauve text-cream hover:bg-dusty-rose transition-colors"
           disabled={isLoading}
         >
           {isLoading ? <LoadingSpinner /> : 'Create Account'}

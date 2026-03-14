@@ -50,6 +50,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
 
+      if (session?.access_token) {
+        localStorage.setItem('auth_token', session.access_token)
+      } else {
+        localStorage.removeItem('auth_token')
+      }
+
       if (session?.user) {
         // Fire-and-forget — never block isLoading on the profile query
         fetchProfile(session.user.id)

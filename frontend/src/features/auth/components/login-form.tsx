@@ -32,7 +32,7 @@ export function LoginForm({ onSuccess, onForgotPassword }: LoginFormProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-ink">
       {error && (
         <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-sm">
           <p className="text-[0.7rem] font-mono text-red-600 uppercase tracking-tight">{error}</p>
@@ -49,7 +49,7 @@ export function LoginForm({ onSuccess, onForgotPassword }: LoginFormProps) {
             setError(err instanceof Error ? err.message : 'Failed to sign in with Google')
           }
         }}
-        className="w-full font-mono text-[0.72rem] uppercase tracking-editorial h-11 border-ink/10 hover:bg-ink hover:text-white transition-colors gap-3"
+        className="w-full font-mono text-[0.72rem] uppercase tracking-editorial h-11 border-ink/10 text-ink hover:bg-ink hover:text-cream transition-colors gap-3"
       >
         <GoogleIcon />
         Continue with Google
@@ -60,7 +60,7 @@ export function LoginForm({ onSuccess, onForgotPassword }: LoginFormProps) {
           <span className="w-full border-t border-ink/10" />
         </div>
         <div className="relative flex justify-center text-[0.65rem] uppercase font-mono">
-          <span className="bg-[var(--cream)] px-3 text-ink-muted/40">Or email</span>
+          <span className="bg-cream px-3 text-ink-muted/40">Or email</span>
         </div>
       </div>
 
@@ -74,7 +74,7 @@ export function LoginForm({ onSuccess, onForgotPassword }: LoginFormProps) {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
             required
-            className="h-10 border-ink/10 bg-transparent rounded-sm font-mono text-[0.85rem]"
+            className="h-10 border-ink/10 bg-cream/50 rounded-sm font-mono text-[0.85rem] text-ink placeholder:text-ink-muted/60"
           />
         </div>
         <div className="space-y-2">
@@ -94,12 +94,12 @@ export function LoginForm({ onSuccess, onForgotPassword }: LoginFormProps) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="h-10 border-ink/10 bg-transparent rounded-sm font-mono text-[0.85rem]"
+            className="h-10 border-ink/10 bg-cream/50 rounded-sm font-mono text-[0.85rem] text-ink placeholder:text-ink-muted/60"
           />
         </div>
         <Button
           type="submit"
-          className="w-full mt-2 font-mono text-[0.72rem] uppercase tracking-editorial h-11 bg-mauve text-white hover:bg-dusty-rose transition-colors"
+          className="w-full mt-2 font-mono text-[0.72rem] uppercase tracking-editorial h-11 bg-mauve text-cream hover:bg-dusty-rose transition-colors"
           disabled={isLoading}
         >
           {isLoading ? <LoadingSpinner /> : 'Sign In'}
