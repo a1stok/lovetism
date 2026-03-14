@@ -67,6 +67,16 @@ export function JournalPage() {
     setEditingId(journal.id)
   }
 
+  const handleToggleVisibility = async (journal: JournalRow) => {
+    const next = (journal.visibility ?? 'private') === 'private' ? 'partner' : 'private'
+    setJournals((prev) => prev.map((j) => (j.id === journal.id ? { ...j, visibility: next } : j)))
+    try {
+      await JournalService.updateJournal(journal.id, { visibility: next })
+    } catch {
+      loadJournals()
+    }
+  }
+
   const handleSaveName = async (id: string, newName: string) => {
     const trimmed = newName.trim()
     if (!trimmed) {
@@ -250,37 +260,67 @@ export function JournalPage() {
                           </h3>
                         )}
                       </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              if (editingId === journal.id) {
-                                setEditingId(null)
-                              } else {
-                                handleEditName(journal)
-                              }
-                            }}
-                            className="shrink-0 p-2 text-ink-muted/40 hover:text-ink-muted transition-colors rounded-full hover:bg-surface"
-                          >
-                            {editingId === journal.id ? (
-                              <Check className="h-4 w-4" />
-                            ) : (
-                              <Pencil className="h-4 w-4" />
-                            )}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              setDeleteId(journal.id)
-                            }}
-                            className="shrink-0 p-2 text-ink-muted/40 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
-                            title="Delete Journal"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            if (editingId === journal.id) {
+                              setEditingId(null)
+                            } else {
+                              handleEditName(journal)
+                            }
+                          }}
+                          className="shrink-0 p-2 text-ink-muted/40 hover:text-ink-muted transition-colors rounded-full hover:bg-surface"
+                        >
+                          {editingId === journal.id ? (
+                            <Check className="h-4 w-4" />
+                          ) : (
+                            <Pencil className="h-4 w-4" />
+                          )}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setDeleteId(journal.id)
+                          }}
+                          className="shrink-0 p-2 text-ink-muted/40 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
+                          title="Delete Journal"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          if ((journal.visibility ?? 'private') !== 'private') handleToggleVisibility(journal)
+                        }}
+                        className={`px-2 py-0.5 text-[0.6rem] font-mono uppercase rounded-l-sm border border-ink/10 transition-colors ${
+                          (journal.visibility ?? 'private') === 'private'
+                            ? 'bg-ink/5 text-ink border-ink/20'
+                            : 'text-ink-muted hover:text-ink'
+                        }`}
+                      >
+                        Private
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          if ((journal.visibility ?? 'private') !== 'partner') handleToggleVisibility(journal)
+                        }}
+                        className={`px-2 py-0.5 text-[0.6rem] font-mono uppercase rounded-r-sm border border-ink/10 border-l-0 transition-colors ${
+                          (journal.visibility ?? 'private') === 'partner'
+                            ? 'bg-ink/5 text-ink border-ink/20'
+                            : 'text-ink-muted hover:text-ink'
+                        }`}
+                      >
+                        Partner
+                      </button>
                     </div>
                   </div>
 

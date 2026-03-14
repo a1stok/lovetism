@@ -32,7 +32,7 @@ export function HeroSection({ onOpenAuth }: { onOpenAuth: () => void }) {
           <div className="hidden md:block bg-divider" />
 
           {/* Right — description + CTA */}
-          <div className="flex flex-col justify-center bg-[var(--cream)]">
+          <div className="flex flex-col justify-center bg-cream">
             <div className="w-full max-w-[40rem] mr-auto px-6 md:px-10 lg:pl-16 py-16 md:py-28 lg:py-36">
               <p className="body-text max-w-sm text-ink-muted">
                 Capture your most precious moments, plan unforgettable dates, and build deeper

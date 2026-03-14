@@ -15,6 +15,7 @@ export function ProfileForm() {
   
   const [firstName, setFirstName] = useState(profile?.first_name || '')
   const [lastName, setLastName] = useState(profile?.last_name || '')
+  const [nickname, setNickname] = useState(profile?.nickname || '')
   const [pendingAvatar, setPendingAvatar] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
 
@@ -53,7 +54,8 @@ export function ProfileForm() {
 
       await ProfileService.updateProfile(user.id, {
         first_name: firstName,
-        last_name: lastName
+        last_name: lastName,
+        nickname: nickname.trim() || null,
       })
       setSuccess(true)
       await refreshProfile()
@@ -153,6 +155,18 @@ export function ProfileForm() {
                     className="h-10 border-ink/10 bg-transparent rounded-sm font-mono text-[0.85rem]"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="nickname" className="font-mono text-[0.65rem] uppercase text-ink-muted/70">Nickname</Label>
+                <Input
+                  id="nickname"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="How partners find you"
+                  className="h-10 border-ink/10 bg-transparent rounded-sm font-mono text-[0.85rem]"
+                />
+                <p className="text-[0.6rem] font-mono text-ink-muted/50">Unique name for partners to add you</p>
               </div>
 
               <div className="space-y-2 pt-2">
