@@ -12,12 +12,12 @@ export function LandingNavbar({ onOpenAuth }: { onOpenAuth: () => void }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-50 bg-[var(--cream)]/95 backdrop-blur">
+    <header className="sticky top-0 z-50 bg-cream/95 backdrop-blur">
       <div className="border-b border-divider">
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div className="flex h-14 items-center justify-between">
             {/* Logo — serif italic */}
-            <a href="/" className="flex items-center"><Logo variant="light" size="navbar" /></a>
+            <a href="/" className="flex items-center text-inherit"><Logo size="navbar" /></a>
 
             {/* Desktop nav — mono uppercase */}
             <nav className="hidden md:flex items-center gap-10">
@@ -36,7 +36,7 @@ export function LandingNavbar({ onOpenAuth }: { onOpenAuth: () => void }) {
             <div className="hidden md:block">
               <button
                 onClick={onOpenAuth}
-                className="inline-flex items-center justify-center px-5 py-2 text-[0.72rem] font-mono font-medium uppercase tracking-editorial bg-mauve text-white rounded-sm hover:bg-dusty-rose transition-colors duration-200"
+                className="inline-flex items-center justify-center px-5 py-2 text-[0.72rem] font-mono font-medium uppercase tracking-editorial bg-mauve text-cream rounded-sm hover:bg-dusty-rose transition-colors duration-200"
               >
                 Get Started
               </button>
@@ -57,7 +57,7 @@ export function LandingNavbar({ onOpenAuth }: { onOpenAuth: () => void }) {
       {/* Mobile menu */}
       <div
         className={cn(
-          'md:hidden absolute top-full left-0 right-0 bg-[var(--cream)] border-b border-divider transition-all duration-200',
+          'md:hidden absolute top-full left-0 right-0 bg-cream border-b border-divider transition-all duration-200',
           mobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none',
         )}
       >
@@ -73,7 +73,7 @@ export function LandingNavbar({ onOpenAuth }: { onOpenAuth: () => void }) {
           ))}
           <button
             onClick={onOpenAuth}
-            className="inline-flex items-center justify-center px-5 py-2.5 text-[0.72rem] font-mono font-medium uppercase tracking-editorial bg-mauve text-white rounded-sm hover:bg-dusty-rose transition-colors w-full"
+            className="inline-flex items-center justify-center px-5 py-2.5 text-[0.72rem] font-mono font-medium uppercase tracking-editorial bg-mauve text-cream rounded-sm hover:bg-dusty-rose transition-colors w-full"
           >
             Get Started
           </button>

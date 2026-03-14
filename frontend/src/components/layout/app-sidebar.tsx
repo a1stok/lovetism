@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Home, BookOpen, Heart, User, ChevronLeft, ChevronRight, LogOut } from 'lucide-react'
+import { Logo } from '@/components/brand'
 import type { LucideIcon } from 'lucide-react'
 import { useLocation, Link } from '@tanstack/react-router'
 import { animate } from '@/animations'
@@ -171,14 +172,15 @@ export function AppSidebar({ isOpen }: AppSidebarProps) {
             <>
               <Button
                 variant="ghost"
-                className="px-0 h-auto font-semibold text-lg hover:bg-transparent"
+                className="px-0 h-auto hover:bg-transparent"
                 asChild
               >
                 <Link 
                   to="/"
                   ref={lovetismRef}
+                  className="text-ink hover:text-ink/90"
                 >
-                  Lovetism
+                  <Logo size="navbar" />
                 </Link>
               </Button>
               <div className="flex-1" />

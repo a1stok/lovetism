@@ -1,7 +1,6 @@
 import { cn } from '@/lib/utils'
 
 interface LogoProps {
-  variant?: 'light' | 'dark'
   size?: 'navbar' | 'hero' | 'display'
   className?: string
 }
@@ -12,9 +11,7 @@ const sizeConfig = {
   display: { markW: 18, markH: 46, stroke: 2.2, textSize: 'text-3xl', gap: 'gap-[13px]' },
 } as const
 
-export function Logo({ variant = 'light', size = 'navbar', className }: LogoProps) {
-  const markColor = variant === 'dark' ? '#E8A0A0' : '#C97B7B'
-  const textColor = variant === 'dark' ? 'text-cream' : 'text-ink'
+export function Logo({ size = 'navbar', className }: LogoProps) {
   const config = sizeConfig[size]
 
   return (
@@ -24,23 +21,25 @@ export function Logo({ variant = 'light', size = 'navbar', className }: LogoProp
         height={config.markH}
         viewBox="0 0 18 48"
         fill="none"
-        className="shrink-0"
+        className="shrink-0 text-mauve"
       >
         <path
           d="M 15,3 C 3,12 3,36 15,45"
-          stroke={markColor}
+          stroke="currentColor"
           strokeWidth={config.stroke}
           strokeLinecap="round"
         />
       </svg>
-      <span
-        className={cn(
-          'font-serif italic font-medium tracking-tight',
-          config.textSize,
-          textColor,
-        )}
-      >
-        Lovetism
+      <span className="relative inline-block">
+        <span
+          className={cn(
+            'font-serif italic font-medium tracking-tight text-ink',
+            config.textSize,
+          )}
+        >
+          Lovetism
+        </span>
+        <span className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-mauve/80 rounded-full" aria-hidden />
       </span>
     </div>
   )
