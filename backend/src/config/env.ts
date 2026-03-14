@@ -10,6 +10,7 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  GEMINI_API_KEY: z.string().optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)

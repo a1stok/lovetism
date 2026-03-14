@@ -7,7 +7,9 @@
     "dev": "npx tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "populate-places": "tsx scripts/populate-places/index.ts",
+    "backfill-vibes": "tsx scripts/backfill-vibes/index.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
