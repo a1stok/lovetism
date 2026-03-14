@@ -2,12 +2,13 @@
  * Backfill vibe fields for curated_places where one_liner IS NULL.
  * Updates existing rows only. Run: npm run backfill-vibes
  *
- * Env: AI_PROVIDER=gemini|openai (default: gemini), GEMINI_API_KEY, OPENAI_API_KEY, LIMIT
+ * Env: AI_PROVIDER=gemini|groq|openai (default: gemini), GEMINI_API_KEY, GROQ_API_KEY, OPENAI_API_KEY, LIMIT
  */
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
 const GEMINI_DELAY_MS = 6000;
+const GROQ_DELAY_MS = 2500;
 const OPENAI_DELAY_MS = 1000;
 
 interface VibeResult {
@@ -110,6 +111,33 @@ async function callGemini(apiKey: string, prompt: string, placeName: string): Pr
   return JSON.parse(cleaned) as VibeResult;
 }
 
+async function callGroq(apiKey: string, prompt: string): Promise<VibeResult | null> {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+    }),
+  });
+
+  if (res.status === 429) throw new Error('RATE_LIMIT:60000');
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Groq API: ${res.status} ${err}`);
+  }
+
+  const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  const text = data.choices?.[0]?.message?.content ?? '';
+  const cleaned = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(cleaned) as VibeResult;
+}
+
 async function callOpenAI(apiKey: string, prompt: string): Promise<VibeResult | null> {
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -143,6 +171,7 @@ async function extractVibe(
   row: PlaceRow
 ): Promise<VibeResult | null> {
   const prompt = buildPrompt(row);
+  if (provider === 'groq') return callGroq(apiKey, prompt);
   if (provider === 'openai') return callOpenAI(apiKey, prompt);
   return callGemini(apiKey, prompt, row.name);
 }
@@ -161,10 +190,15 @@ async function run(): Promise<void> {
   const limit = parseInt(process.env.LIMIT || '0', 10) || 999999;
 
   const geminiKey = process.env.GEMINI_API_KEY;
+  const groqKey = process.env.GROQ_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
 
   if (provider === 'gemini' && !geminiKey) {
     console.error('Missing GEMINI_API_KEY');
+    process.exit(1);
+  }
+  if (provider === 'groq' && !groqKey) {
+    console.error('Missing GROQ_API_KEY');
     process.exit(1);
   }
   if (provider === 'openai' && !openaiKey) {
@@ -172,7 +206,7 @@ async function run(): Promise<void> {
     process.exit(1);
   }
 
-  const apiKey = provider === 'openai' ? openaiKey! : geminiKey!;
+  const apiKey = provider === 'groq' ? groqKey! : provider === 'openai' ? openaiKey! : geminiKey!;
   const supabase = createClient(url, serviceKey);
 
   const BATCH = 1000;
@@ -260,7 +294,8 @@ async function run(): Promise<void> {
       }
     }
 
-    const delay = provider === 'openai' ? OPENAI_DELAY_MS : GEMINI_DELAY_MS;
+    const delay =
+      provider === 'groq' ? GROQ_DELAY_MS : provider === 'openai' ? OPENAI_DELAY_MS : GEMINI_DELAY_MS;
     await sleep(delay);
   }
 
