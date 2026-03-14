@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Beige × Black × Blush Pink — Editorial palette */
+    --background: 36 33% 97%;
+    /* #FAF8F5 warm cream */
+    --foreground: 30 14% 9%;
+    /* #1A1814 near-black */
+    --card: 36 22% 92%;
+    /* #F0ECE4 beige surface */
+    --card-foreground: 30 14% 9%;
+    /* #1A1814 */
+    --popover: 36 33% 97%;
+    --popover-foreground: 30 14% 9%;
+    --primary: 0 32% 63%;
+    /* #C97B7B deep mauve */
+    --primary-foreground: 36 33% 97%;
+    --secondary: 36 22% 92%;
+    /* #F0ECE4 beige */
+    --secondary-foreground: 30 14% 9%;
+    --muted: 36 22% 92%;
+    --muted-foreground: 20 5% 40%;
+    /* #6B6560 warm gray */
+    --accent: 0 44% 85%;
+    /* #F2C4C4 blush */
+    --accent-foreground: 30 14% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 33 16% 84%;
+    /* #DDD8CE warm divider */
+    --input: 33 16% 84%;
+    --ring: 0 32% 63%;
+    --radius: 0.25rem;
+
+    /* Explicit editorial tokens */
+    --cream: #FAF8F5;
+    --surface: #F0ECE4;
+    --divider: #DDD8CE;
+    --ink: #1A1814;
+    --ink-muted: #6B6560;
+    --blush: #F2C4C4;
+    --dusty-rose: #E8A0A0;
+    --mauve: #C97B7B;
+  }
+
+  .dark {
+    --background: 30 14% 6%;
+    --foreground: 36 33% 97%;
+    --card: 30 14% 9%;
+    --card-foreground: 36 33% 97%;
+    --popover: 30 14% 9%;
+    --popover-foreground: 36 33% 97%;
+    --primary: 0 36% 69%;
+    --primary-foreground: 30 14% 6%;
+    --secondary: 30 10% 14%;
+    --secondary-foreground: 36 33% 97%;
+    --muted: 30 10% 14%;
+    --muted-foreground: 20 5% 60%;
+    --accent: 0 30% 20%;
+    --accent-foreground: 36 33% 97%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 30 10% 18%;
+    --input: 30 10% 18%;
+    --ring: 0 36% 69%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'DM Mono', monospace;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ─── Editorial utility classes ─── */
+@layer utilities {
+  .font-serif {
+    font-family: 'Cormorant Garamond', serif;
+  }
+
+  .font-mono {
+    font-family: 'DM Mono', monospace;
+  }
+
+  .tracking-editorial {
+    letter-spacing: 0.15em;
+  }
+
+  .tracking-wide-editorial {
+    letter-spacing: 0.2em;
+  }
+}
+
+/* ─── Shared landing page component classes ─── */
+@layer components {
+
+  /* Container — constrains content, NOT the divider lines */
+  .landing-container {
+    @apply max-w-7xl mx-auto px-6 md:px-10;
+  }
+
+  /* Full-bleed divider — extends edge-to-edge */
+  .full-bleed-divider {
+    @apply w-full border-t border-divider;
+  }
+
+  /* Section header block */
+  .section-header {
+    @apply pt-16 pb-12 md:pt-20 md:pb-16;
+  }
+
+  /* Section title — serif, light */
+  .section-title {
+    @apply font-serif font-light text-3xl md:text-4xl text-ink;
+  }
+
+  /* Eyebrow label — mono uppercase */
+  .eyebrow {
+    @apply text-[0.66rem] font-mono font-medium uppercase tracking-[0.15em] text-ink-muted;
+  }
+
+  /* Body text — mono, readable */
+  .body-text {
+    @apply font-mono text-[0.8rem] leading-relaxed text-ink-muted font-medium;
+  }
+
+  /* Primary button — mauve fill */
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-7 py-3 text-[0.72rem] font-mono font-medium uppercase tracking-[0.15em] bg-mauve text-white rounded-sm hover:bg-dusty-rose transition-colors duration-200;
+  }
+
+  /* Outline button — divider border */
+  .btn-outline {
+    @apply inline-flex items-center justify-center px-7 py-3 text-[0.72rem] font-mono font-medium uppercase tracking-[0.15em] text-ink-muted border border-divider rounded-sm hover:border-ink-muted hover:text-ink transition-colors duration-200;
+  }
+
+  /* ─── Feature cards ─── */
+  .feature-card {
+    @apply flex flex-col;
+  }
+
+  /* ─── Dark footer ─── */
+  .landing-footer {
+    background: linear-gradient(
+      175deg,
+      #1a1814 0%,
+      #1f1c18 35%,
+      #221e1a 60%,
+      #1d1915 100%
+    );
+  }
+
+  .footer-eyebrow {
+    @apply text-[0.66rem] font-mono font-medium uppercase tracking-[0.15em] text-white/60;
+  }
+}
