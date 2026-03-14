@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Logo } from '@/components/brand'
 import { cn } from '@/lib/utils'
 import { Menu, X } from 'lucide-react'
 
@@ -16,9 +17,7 @@ export function LandingNavbar({ onOpenAuth }: { onOpenAuth: () => void }) {
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div className="flex h-14 items-center justify-between">
             {/* Logo — serif italic */}
-            <a href="/" className="font-serif text-xl font-medium italic text-ink tracking-tight">
-              Lovetism
-            </a>
+            <a href="/" className="flex items-center"><Logo variant="light" size="navbar" /></a>
 
             {/* Desktop nav — mono uppercase */}
             <nav className="hidden md:flex items-center gap-10">
