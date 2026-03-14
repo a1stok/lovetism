@@ -1,0 +1,105 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+jspm_packages/
+bower_components/
+
+# Build
+dist/
+build/
+out/
+.next/
+.nuxt/
+.output/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Testing
+coverage/
+*.lcov
+.nyc_output/
+__snapshots__/
+.jest/
+*.test.js.snap
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+*.code-workspace
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Cache
+tmp/
+temp/
+.temp/
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+.stylelintcache
+*.cache
+
+# Vite
+.vite/
+.tanstack/
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnpm-store/
+
+# Secrets
+*.pem
+*.key
+*.crt
+secrets/
+.secrets/
+
+# Misc
+*.local
+.history/
+*.bak
+*.backup
+
+# Media (exclude from commits for now)
+**/images/
+**/videos/
+
+.cursor/
