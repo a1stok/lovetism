@@ -145,6 +145,20 @@
     @apply inline-flex items-center justify-center px-7 py-3 text-[0.72rem] font-mono font-medium uppercase tracking-[0.15em] text-ink-muted border border-divider rounded-sm hover:border-ink-muted hover:text-ink transition-colors duration-200;
   }
 
+  /* Form inputs — editorial style */
+  .input-editorial {
+    @apply h-10 px-3 rounded-lg border font-sans text-sm focus:outline-none focus:ring-2;
+    border-color: color-mix(in srgb, var(--ink) 10%, transparent);
+    background-color: color-mix(in srgb, var(--cream) 50%, transparent);
+    color: var(--ink);
+  }
+  .input-editorial::placeholder {
+    color: color-mix(in srgb, var(--ink-muted) 60%, transparent);
+  }
+  .input-editorial:focus {
+    --tw-ring-color: color-mix(in srgb, var(--mauve) 30%, transparent);
+  }
+
   /* ─── Feature cards ─── */
   .feature-card {
     @apply flex flex-col;

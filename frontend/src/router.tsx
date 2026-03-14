@@ -11,13 +11,8 @@ import {
 } from '@tanstack/react-router'
 import {
   BookOpen,
-  Calendar,
   Heart,
-  Sparkles,
-  MapPin,
   User,
-  Settings,
-  Bell,
 } from 'lucide-react'
 
 // Pages
@@ -25,7 +20,9 @@ import { LandingPage } from '@/pages/landing/landing-page'
 import { JournalPage } from '@/pages/journal/journal-page'
 import { JournalDetailPage } from '@/pages/journal/journal-detail-page'
 import { DateIdeasPage } from '@/pages/date-ideas/date-ideas-page'
-import { ProfilePage } from '@/pages/profile/profile-page'
+import { ProfileLayout } from '@/pages/profile/profile-layout'
+import { ProfileForm } from '@/pages/profile/components/profile-form'
+import { PartnerPage } from '@/pages/profile/partner-page'
 
 // Auth features
 import { ProtectedRoute, UpdatePasswordForm } from '@/features/auth'
@@ -40,12 +37,7 @@ routeContextMap['/journal'] = {
 
 routeContextMap['/date-ideas'] = {
   title: 'Date Ideas',
-  items: [
-    { name: 'Discover', href: '/date-ideas/discover', icon: Sparkles },
-    { name: 'Favorites', href: '/date-ideas/favorites', icon: Heart },
-    { name: 'Planned', href: '/date-ideas/planned', icon: Calendar },
-    { name: 'Near Me', href: '/date-ideas/nearby', icon: MapPin },
-  ],
+  items: [],
 }
 
 routeContextMap['/profile'] = {
@@ -53,8 +45,6 @@ routeContextMap['/profile'] = {
   items: [
     { name: 'My Profile', href: '/profile/me', icon: User },
     { name: 'Partner', href: '/profile/partner', icon: Heart },
-    { name: 'Preferences', href: '/profile/preferences', icon: Settings },
-    { name: 'Notifications', href: '/profile/notifications', icon: Bell },
   ],
 }
 
@@ -75,7 +65,7 @@ const resetPasswordRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/auth/reset-password',
   component: () => (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--cream)] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-cream p-4">
       <UpdatePasswordForm />
     </div>
   ),
@@ -113,10 +103,48 @@ const dateIdeasRoute = createRoute({
   component: DateIdeasPage,
 })
 
-const profileRoute = createRoute({
+const profileLayoutRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/profile',
-  component: ProfilePage,
+  component: ProfileLayout,
+})
+
+const profileIndexRoute = createRoute({
+  getParentRoute: () => profileLayoutRoute,
+  path: '/',
+  component: () => (
+    <div className="max-w-4xl mx-auto space-y-12 pb-24">
+      <div className="flex flex-col gap-2">
+        <h1 className="font-serif text-4xl lg:text-5xl text-ink font-light tracking-tight">Your Profile</h1>
+        <p className="font-mono text-[0.7rem] uppercase tracking-widest text-ink-muted/70">Manage your identity and preferences</p>
+      </div>
+      <div className="bg-white/50 backdrop-blur-sm rounded-2xl border border-ink/5 p-6 md:p-10 shadow-sm">
+        <ProfileForm />
+      </div>
+    </div>
+  ),
+})
+
+const profilePartnerRoute = createRoute({
+  getParentRoute: () => profileLayoutRoute,
+  path: '/partner',
+  component: PartnerPage,
+})
+
+const profileMeRoute = createRoute({
+  getParentRoute: () => profileLayoutRoute,
+  path: '/me',
+  component: () => (
+    <div className="max-w-4xl mx-auto space-y-12 pb-24">
+      <div className="flex flex-col gap-2">
+        <h1 className="font-serif text-4xl lg:text-5xl text-ink font-light tracking-tight">My Profile</h1>
+        <p className="font-mono text-[0.7rem] uppercase tracking-widest text-ink-muted/70">Manage your identity</p>
+      </div>
+      <div className="bg-white/50 backdrop-blur-sm rounded-2xl border border-ink/5 p-6 md:p-10 shadow-sm">
+        <ProfileForm />
+      </div>
+    </div>
+  ),
 })
 
 const CatchAllComponent = () => {
@@ -151,7 +179,11 @@ const routeTree = rootRoute.addChildren([
     journalRoute,
     journalDetailRoute,
     dateIdeasRoute,
-    profileRoute,
+    profileLayoutRoute.addChildren([
+      profileIndexRoute,
+      profileMeRoute,
+      profilePartnerRoute,
+    ]),
   ]),
   catchAllRoute,
 ])

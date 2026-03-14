@@ -12,7 +12,7 @@ import { FileTree } from '@/components/journal/file-tree'
 import { RichTextEditor } from '@/components/journal/rich-text-editor'
 import { JournalService } from './api/journal-service'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import type { JournalItem, JournalRow } from '@/types/journal'
+import type { JournalItem, JournalRow, TiptapJson } from '@/types/journal'
 import { cn } from '@/lib/utils'
 
 export function JournalDetailPage() {
@@ -53,7 +53,7 @@ export function JournalDetailPage() {
     // Debounce timer ref for auto-saving content
     const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    const debouncedSave = useCallback((nodeId: string, content: Record<string, any>) => {
+    const debouncedSave = useCallback((nodeId: string, content: TiptapJson) => {
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
         saveTimerRef.current = setTimeout(() => {
             JournalService.updateNode(nodeId, { content }).catch(console.error)
@@ -67,7 +67,7 @@ export function JournalDetailPage() {
         }
     }, [])
 
-    const handleContentChange = (content: Record<string, any>) => {
+    const handleContentChange = (content: TiptapJson) => {
         setFileContent(content)
         if (selectedFile) {
             debouncedSave(selectedFile.id, content)
@@ -263,7 +263,7 @@ export function JournalDetailPage() {
                 <div className="flex flex-1 overflow-hidden relative">
                     <aside
                         className={cn(
-                            "bg-[var(--cream)] border-r border-ink/5 transition-all duration-300 ease-in-out flex flex-col overflow-hidden",
+                            "bg-cream border-r border-ink/5 transition-all duration-300 ease-in-out flex flex-col overflow-hidden",
                             isSidebarOpen ? "w-64" : "w-0 border-r-0"
                         )}
                     >
@@ -341,7 +341,7 @@ export function JournalDetailPage() {
             <div className="flex flex-1 overflow-hidden relative">
                 <aside
                     className={cn(
-                        "bg-[var(--cream)] border-r border-ink/5 transition-all duration-300 ease-in-out flex flex-col overflow-hidden",
+                        "bg-cream border-r border-ink/5 transition-all duration-300 ease-in-out flex flex-col overflow-hidden",
                         isSidebarOpen ? "w-64" : "w-0 border-r-0"
                     )}
                 >

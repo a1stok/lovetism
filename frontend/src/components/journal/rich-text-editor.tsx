@@ -39,10 +39,11 @@ import { JournalService } from '@/pages/journal/api/journal-service'
 import { useAuth } from '@/features/auth/context/use-auth'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { LocationPicker } from './location-picker'
+import type { TiptapJson } from '@/types/journal'
 
 interface RichTextEditorProps {
-    content: Record<string, any> | null
-    onChange?: (content: Record<string, any>) => void
+    content: TiptapJson | null
+    onChange?: (content: TiptapJson) => void
     className?: string
 }
 
@@ -326,7 +327,7 @@ export function RichTextEditor({
                                                 editor
                                                     .chain()
                                                     .focus()
-                                                    .insertContent(`<a href="${place.url}" target="_blank" class="location-link font-medium inline-flex items-center gap-1 transition-all hover:text-primary hover:underline cursor-text">📍 ${place.name}</a> `)
+                                                    .insertContent(`<a href="${place.url}" target="_blank" class="location-link font-medium inline-flex items-center gap-1 transition-all hover:text-primary hover:underline cursor-text">${place.name}</a> `)
                                                     .run()
                                                 setIsLocationOpen(false)
                                             }

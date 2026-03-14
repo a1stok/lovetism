@@ -1,9 +1,11 @@
+export type TiptapJson = Record<string, unknown>
+
 export interface JournalItem {
   id: string
   type: 'folder' | 'file'
   name: string
-  content?: Record<string, any> | null // Tiptap JSON object
-  items?: JournalItem[] // Children for folders
+  content?: TiptapJson | null
+  items?: JournalItem[]
 }
 
 /** Raw row from the `journals` Supabase table */
@@ -12,6 +14,7 @@ export interface JournalRow {
   user_id: string
   name: string
   background_image: string | null
+  visibility?: 'private' | 'partner'
   created_at: string
 }
 

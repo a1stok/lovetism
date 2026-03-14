@@ -8,7 +8,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 
 function Footer() {
-// ... footer remains the same ...
   const currentYear = new Date().getFullYear()
 
   return (
@@ -139,7 +138,7 @@ export function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--cream)]">
+    <div className="min-h-screen bg-cream">
       <LandingNavbar onOpenAuth={() => openAuth('login')} />
       <main>
         <HeroSection onOpenAuth={() => openAuth('register')} />

@@ -276,7 +276,7 @@ async function run(): Promise<void> {
           failed++;
         } else {
           updated++;
-          console.log(`  ✓ ${row.name}`);
+          console.log(`  OK ${row.name}`);
         }
         done = true;
       } catch (err) {
@@ -287,7 +287,7 @@ async function run(): Promise<void> {
           await sleep(waitMs);
           retriesLeft--;
         } else {
-          console.error(`  ✗ ${row.name}:`, msg);
+          console.error(`  FAIL ${row.name}:`, msg);
           failed++;
           done = true;
         }

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import type { JournalItem, JournalRow } from '@/types/journal'
+import type { JournalItem, JournalRow, TiptapJson } from '@/types/journal'
 import imageCompression from 'browser-image-compression'
 
 export const JournalService = {
@@ -79,7 +79,7 @@ export const JournalService = {
     if (error) throw error
   },
 
-  async updateJournal(journalId: string, updates: { name?: string; background_image?: string | null }): Promise<JournalRow> {
+  async updateJournal(journalId: string, updates: { name?: string; background_image?: string | null; visibility?: 'private' | 'partner' }): Promise<JournalRow> {
     const { data, error } = await supabase
       .from('journals')
       .update(updates)
@@ -188,7 +188,7 @@ function buildTree(rows: NodeRow[]): JournalItem[] {
       id: row.id,
       type: row.type,
       name: row.name,
-      content: row.type === 'file' ? (row.content as Record<string, any>) : undefined,
+      content: row.type === 'file' ? (row.content as TiptapJson) : undefined,
       items: row.type === 'folder' ? [] : undefined,
     })
   }
