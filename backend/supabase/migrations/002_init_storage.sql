@@ -1,6 +1,4 @@
--- ============================================================
 -- Storage buckets for file uploads (avatars + journal covers)
--- ============================================================
 
 -- 1. Avatars bucket (profile photos)
 INSERT INTO storage.buckets (id, name, public)
@@ -13,9 +11,7 @@ VALUES ('journal-assets', 'journal-assets', true)
 ON CONFLICT (id) DO NOTHING;
 
 
--- ============================================================
 -- Avatars storage policies
--- ============================================================
 
 DROP POLICY IF EXISTS "Avatar images are publicly accessible." ON storage.objects;
 CREATE POLICY "Avatar images are publicly accessible."
@@ -47,9 +43,7 @@ CREATE POLICY "Users can delete their own avatar."
   );
 
 
--- ============================================================
 -- Journal assets storage policies
--- ============================================================
 
 DROP POLICY IF EXISTS "Journal assets are publicly accessible." ON storage.objects;
 CREATE POLICY "Journal assets are publicly accessible."
