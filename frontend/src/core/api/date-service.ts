@@ -29,6 +29,9 @@ export interface SavedDate extends DateItinerary {
   id: string
   google_maps_url?: string
   partner_name?: string | null
+  partner_id?: string | null
+  partner_avatar_url?: string | null
+  status?: 'saved' | 'completed'
   created_at: string
 }
 
@@ -66,12 +69,17 @@ export const DateService = {
     return apiClient.get(`/api/weather?lat=${lat}&lng=${lng}`)
   },
 
-  async listSavedDates(): Promise<{ dates: SavedDate[] }> {
-    return apiClient.get('/api/saved-dates')
+  async listSavedDates(status?: 'saved' | 'completed'): Promise<{ dates: SavedDate[] }> {
+    const params = status ? { status } : {}
+    return apiClient.get('/api/saved-dates', { params })
   },
 
-  async saveDate(itinerary: DateItinerary & { google_maps_url?: string; partner_name?: string | null }): Promise<SavedDate> {
+  async saveDate(itinerary: DateItinerary & { google_maps_url?: string; partner_name?: string | null; partner_id?: string | null }): Promise<SavedDate> {
     return apiClient.post('/api/saved-dates', itinerary)
+  },
+
+  async markDateCompleted(id: string): Promise<SavedDate> {
+    return apiClient.patch(`/api/saved-dates/${id}/complete`)
   },
 
   async deleteSavedDate(id: string): Promise<void> {

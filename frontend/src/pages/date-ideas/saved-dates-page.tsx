@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Heart, ExternalLink, Copy, Trash2, MapPin, CloudSun } from 'lucide-react'
+import { Heart, ExternalLink, Copy, Trash2, MapPin, CloudSun, User, Check } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -13,13 +13,17 @@ import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { DateMap } from './components/date-map'
 import { PlacePhotoGallery } from './components/place-photo-gallery'
 
+type DateTab = 'saved' | 'past'
+
 export function SavedDatesPage() {
+  const [tab, setTab] = useState<DateTab>('saved')
   const [dates, setDates] = useState<SavedDate[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [completingId, setCompletingId] = useState<string | null>(null)
   const [galleryStop, setGalleryStop] = useState<DateStop | null>(null)
   const [expandedDate, setExpandedDate] = useState<SavedDate | null>(null)
 
@@ -27,7 +31,8 @@ export function SavedDatesPage() {
     try {
       setIsLoading(true)
       setError(null)
-      const data = await DateService.listSavedDates()
+      const status = tab === 'past' ? 'completed' : 'saved'
+      const data = await DateService.listSavedDates(status)
       setDates(data.dates)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load saved dates')
@@ -38,7 +43,7 @@ export function SavedDatesPage() {
 
   useEffect(() => {
     loadDates()
-  }, [])
+  }, [tab])
 
   const handleDelete = async () => {
     if (!deleteId) return
@@ -65,6 +70,20 @@ export function SavedDatesPage() {
     }
   }
 
+  const handleMarkComplete = async (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    try {
+      setCompletingId(id)
+      await DateService.markDateCompleted(id)
+      setDates((prev) => prev.filter((d) => d.id !== id))
+      if (expandedDate?.id === id) setExpandedDate(null)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update')
+    } finally {
+      setCompletingId(null)
+    }
+  }
+
   const getPartnerSubtitle = (date: SavedDate) =>
     date.partner_name ? `Date with ${date.partner_name}` : 'Solo date'
 
@@ -85,6 +104,24 @@ export function SavedDatesPage() {
         <p className="font-mono text-[0.7rem] uppercase tracking-widest text-ink-muted/70 mt-2">
           Your favorite date itineraries
         </p>
+        <div className="flex gap-2 mt-4">
+          <Button
+            variant={tab === 'saved' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setTab('saved')}
+            className={tab === 'saved' ? 'bg-mauve text-cream hover:bg-dusty-rose' : 'text-ink-muted hover:text-ink'}
+          >
+            Saved
+          </Button>
+          <Button
+            variant={tab === 'past' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setTab('past')}
+            className={tab === 'past' ? 'bg-mauve text-cream hover:bg-dusty-rose' : 'text-ink-muted hover:text-ink'}
+          >
+            Past Dates
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -97,38 +134,47 @@ export function SavedDatesPage() {
         <Card className="border-ink/5">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Heart className="h-10 w-10 text-mauve/30 mb-4" />
-            <h2 className="font-serif text-xl font-light text-ink mb-1">No saved dates yet</h2>
+            <h2 className="font-serif text-xl font-light text-ink mb-1">
+              {tab === 'past' ? 'No past dates yet' : 'No saved dates yet'}
+            </h2>
             <p className="font-mono text-[0.72rem] text-ink-muted/70 max-w-sm">
-              Generate a date and save it here to keep track of your favorites.
+              {tab === 'past'
+                ? 'Mark a saved date as "Went on date" to move it here.'
+                : 'Generate a date and save it here to keep track of your favorites.'}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {dates.map((date) => {
-            const firstStop = Array.isArray(date.stops) ? (date.stops as SavedDate['stops'])[0] : null
-            const hasPhoto = firstStop?.photo_reference ?? firstStop?.photo_references?.[0]
-            return (
-              <Card
-                key={date.id}
-                className="border-ink/5 overflow-hidden cursor-pointer hover:border-mauve/30 transition-colors group"
-                onClick={() => setExpandedDate(date)}
-              >
-                {/* Compact preview */}
-                <div className="relative">
-                  {hasPhoto ? (
-                    <div className="aspect-[4/3] overflow-hidden bg-surface">
-                      <img
-                        src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${hasPhoto}&key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}`}
-                        alt=""
-                        className="object-cover w-full h-full group-hover:scale-[1.02] transition-transform"
-                      />
+          {dates.map((date) => (
+            <Card
+              key={date.id}
+              className="border-ink/5 overflow-hidden cursor-pointer hover:border-mauve/30 transition-colors"
+              onClick={() => setExpandedDate(date)}
+            >
+              <CardHeader className="pb-2 pt-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="font-serif text-lg font-light text-ink line-clamp-1">
+                      {date.title}
+                    </CardTitle>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      {date.partner_avatar_url ? (
+                        <img
+                          src={date.partner_avatar_url}
+                          alt=""
+                          className="w-7 h-7 rounded-full object-cover shrink-0 border border-ink/10"
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-ink-muted/20 flex items-center justify-center shrink-0">
+                          <User className="h-3.5 w-3.5 text-ink-muted/70" />
+                        </div>
+                      )}
+                      <span className="font-mono text-[0.68rem] text-ink-muted/80 truncate">
+                        {getPartnerSubtitle(date)}
+                      </span>
                     </div>
-                  ) : (
-                    <div className="aspect-[4/3] bg-surface flex items-center justify-center">
-                      <Heart className="h-12 w-12 text-mauve/20" />
-                    </div>
-                  )}
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -136,40 +182,88 @@ export function SavedDatesPage() {
                       e.stopPropagation()
                       setDeleteId(date.id)
                     }}
-                    className="absolute top-2 right-2 h-8 w-8 rounded-full bg-cream/90 hover:bg-red-500/20 hover:text-red-500 text-ink-muted/70"
+                    className="h-7 w-7 shrink-0 text-ink-muted/50 hover:text-red-500"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
-                <CardHeader className="pb-2 pt-3">
-                  <CardTitle className="font-serif text-lg font-light text-ink line-clamp-1">
-                    {date.title}
-                  </CardTitle>
-                  <CardDescription className="font-mono text-[0.68rem] text-ink-muted/80 mt-0.5">
-                    {getPartnerSubtitle(date)}
-                  </CardDescription>
-                  {date.description && (
-                    <p className="text-xs text-ink-muted/80 mt-1.5 line-clamp-2 leading-relaxed">
-                      {date.description}
-                    </p>
+                {date.description && (
+                  <p className="text-xs text-ink-muted/80 mt-2 line-clamp-2 leading-relaxed">
+                    {date.description}
+                  </p>
+                )}
+                {(date.location_name || date.total_estimated_spend) && (
+                  <div className="flex items-center gap-2 mt-2 text-[0.65rem] text-ink-muted font-mono">
+                    {date.location_name && (
+                      <span className="flex items-center gap-1 truncate">
+                        <MapPin className="h-2.5 w-2.5 shrink-0" />
+                        {date.location_name}
+                      </span>
+                    )}
+                    {date.total_estimated_spend != null && (
+                      <span>~${date.total_estimated_spend}</span>
+                    )}
+                  </div>
+                )}
+                <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-ink/5">
+                  {date.google_maps_url && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          window.open(date.google_maps_url!, '_blank')
+                        }}
+                        className="h-7 px-2 text-[0.65rem] text-ink-muted hover:text-ink"
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Open in Google Maps
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleCopyLink(date.id, date.google_maps_url!)
+                        }}
+                        className="h-7 px-2 text-[0.65rem] text-ink-muted hover:text-ink"
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        {copiedId === date.id ? 'Copied!' : 'Copy link'}
+                      </Button>
+                    </>
                   )}
-                  {(date.location_name || date.total_estimated_spend) && (
-                    <div className="flex items-center gap-2 mt-2 text-[0.65rem] text-ink-muted font-mono">
-                      {date.location_name && (
-                        <span className="flex items-center gap-1 truncate">
-                          <MapPin className="h-2.5 w-2.5 shrink-0" />
-                          {date.location_name}
-                        </span>
+                  <span className="font-mono text-[0.6rem] text-ink-muted/60">
+                    Saved{' '}
+                    {new Date(date.created_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </span>
+                  {tab === 'saved' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => handleMarkComplete(date.id, e)}
+                      disabled={!!completingId}
+                      className="h-7 px-2 text-[0.65rem] text-mauve hover:text-mauve hover:bg-mauve/10 ml-auto"
+                    >
+                      {completingId === date.id ? (
+                        <LoadingSpinner className="h-3 w-3" />
+                      ) : (
+                        <>
+                          <Check className="h-3 w-3 mr-1" />
+                          Went on date
+                        </>
                       )}
-                      {date.total_estimated_spend != null && (
-                        <span>~${date.total_estimated_spend}</span>
-                      )}
-                    </div>
+                    </Button>
                   )}
-                </CardHeader>
-              </Card>
-            )
-          })}
+                </div>
+              </CardHeader>
+            </Card>
+          ))}
         </div>
       )}
 
@@ -352,6 +446,24 @@ export function SavedDatesPage() {
                         {copiedId === expandedDate.id ? 'Copied!' : 'Copy link'}
                       </Button>
                     </>
+                  )}
+                  {expandedDate.status !== 'completed' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleMarkComplete(expandedDate.id)}
+                      disabled={!!completingId}
+                      className="border-mauve/30 text-mauve hover:bg-mauve/10 text-[0.7rem]"
+                    >
+                      {completingId === expandedDate.id ? (
+                        <LoadingSpinner className="h-3.5 w-3.5 mr-1.5" />
+                      ) : (
+                        <>
+                          <Check className="h-3.5 w-3.5 mr-1.5" />
+                          Went on date
+                        </>
+                      )}
+                    </Button>
                   )}
                 </div>
 
