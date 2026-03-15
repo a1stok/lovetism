@@ -67,7 +67,7 @@ export interface CuratedPlaceRow {
   accepts_debit_cards: boolean;
   accepts_nfc: boolean;
   photo_reference: string | null;
-  photo_references: null;
+  photo_references: string[];
   bayesian_score: number;
   priority_score: number;
   is_hidden_gem: boolean;
@@ -155,7 +155,7 @@ export function toCuratedPlaceRow(
     accepts_debit_cards: details.acceptsDebitCards ?? false,
     accepts_nfc: details.acceptsNfc ?? false,
     photo_reference: details.photoReference ?? null,
-    photo_references: null,
+    photo_references: details.photoReferences ?? [],
     bayesian_score: priority.bayesian,
     priority_score: priority.score,
     is_hidden_gem: priority.isHiddenGem,

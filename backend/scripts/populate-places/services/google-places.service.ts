@@ -90,6 +90,7 @@ export interface PlaceFromSearch {
   primaryType: string | null;
   types: string[];
   photoReference: string | null;
+  photoReferences: string[];
   editorialSummary: string | null;
   outdoorSeating: boolean;
   reservable: boolean;
@@ -145,7 +146,11 @@ function parsePlaceFromResponse(p: Record<string, unknown>): PlaceFromSearch {
   const name = displayName?.text ?? (p.name as string) ?? 'Unknown';
 
   const photos = p.photos as Array<{ name?: string }> | undefined;
-  const photoRef = photos?.[0]?.name?.split('/').pop() ?? null;
+  const photoRefs = (photos ?? [])
+    .map(photo => photo.name?.split('/').pop() ?? null)
+    .filter((ref): ref is string => ref !== null)
+    .slice(0, 5); // Keep top 5 photos
+  const photoRef = photoRefs.length > 0 ? photoRefs[0] : null;
 
   const reviews = (p.reviews as Array<{ text?: string; rating?: number }> | undefined) ?? [];
   const reviewList = reviews.map((r) => ({ text: r.text ?? '', rating: r.rating }));
@@ -162,6 +167,7 @@ function parsePlaceFromResponse(p: Record<string, unknown>): PlaceFromSearch {
     primaryType: (p.primaryType as string) ?? null,
     types: ((p.types as string[]) ?? []) as string[],
     photoReference: photoRef,
+    photoReferences: photoRefs,
     editorialSummary: (p.editorialSummary as { text?: string })?.text ?? null,
     outdoorSeating: (p.outdoorSeating as boolean) ?? false,
     reservable: (p.reservable as boolean) ?? false,
@@ -272,7 +278,13 @@ export async function placeDetails(apiKey: string, placeId: string): Promise<Pla
   const base = parsePlaceFromResponse(p);
 
   const photos = p.photos as Array<{ name?: string }> | undefined;
-  const photoRef = photos?.[0]?.name?.split('/').pop() ?? base.photoReference;
+  const photoRefs = (photos ?? [])
+    .map(photo => photo.name?.split('/').pop() ?? null)
+    .filter((ref): ref is string => ref !== null)
+    .slice(0, 5);
+  
+  const finalPhotoRefs = photoRefs.length > 0 ? photoRefs : base.photoReferences;
+  const finalPhotoRef = finalPhotoRefs.length > 0 ? finalPhotoRefs[0] : null;
 
   const acc = p.accessibilityOptions as Record<string, boolean> | undefined;
   const park = p.parkingOptions as Record<string, boolean> | undefined;
@@ -280,7 +292,8 @@ export async function placeDetails(apiKey: string, placeId: string): Promise<Pla
 
   return {
     ...base,
-    photoReference: photoRef,
+    photoReference: finalPhotoRef,
+    photoReferences: finalPhotoRefs,
     website: (p.websiteUri as string) ?? null,
     phone: (p.nationalPhoneNumber as string) ?? (p.internationalPhoneNumber as string) ?? null,
     openingHours: p.regularOpeningHours ?? null,
