@@ -33,7 +33,15 @@ router.get('/', async (req, res) => {
     return {
       id: p.id,
       partnerId: pid,
-      partner: partner ? { ...partner, displayName: (partner as { nickname?: string }).nickname || partner.first_name || 'Partner' } : null,
+      partner: partner
+        ? {
+            ...partner,
+            displayName:
+              [partner.first_name, partner.last_name].filter(Boolean).join(' ') ||
+              (partner as { nickname?: string }).nickname ||
+              'Partner',
+          }
+        : null,
       status: p.status,
       isInviter: p.user_id_1 === userId,
       created_at: p.created_at,

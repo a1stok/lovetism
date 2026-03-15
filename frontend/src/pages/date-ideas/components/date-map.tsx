@@ -1,10 +1,18 @@
 import { useEffect, useState, useMemo } from 'react'
 import { GoogleMap, Marker, DirectionsRenderer, InfoWindow } from '@react-google-maps/api'
+import { Maximize2 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { DateStop } from '@/core/api/date-service'
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY || ''
 
-const MAP_CONTAINER_STYLE = { width: '100%', height: '300px', borderRadius: '12px' }
+const MAP_HEIGHT_COMPACT = 300
+const MAP_HEIGHT_MODAL = 'min(85vh, 600px)'
 
 const LOVETISM_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { elementType: 'geometry', stylers: [{ color: '#F0ECE4' }] },
@@ -28,6 +36,8 @@ interface DateMapProps {
   stops: DateStop[]
   travelMode?: TravelMode
   className?: string
+  /** When true, shows expand button and supports modal. Default true for inline embeds. */
+  showExpandButton?: boolean
 }
 
 function escapeHtml(s: string): string {
@@ -42,7 +52,7 @@ function escapeHtml(s: string): string {
 function buildInfoContent(stop: DateStop & { lat: number; lng: number }, index: number): string {
   const photoRef = stop.photo_reference ?? stop.photo_references?.[0]
   const photoUrl = photoRef && GOOGLE_API_KEY
-    ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=200&photo_reference=${photoRef}&key=${GOOGLE_API_KEY}`
+    ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoRef}&key=${GOOGLE_API_KEY}`
     : ''
   const name = escapeHtml(stop.name)
   return `
@@ -51,41 +61,43 @@ function buildInfoContent(stop: DateStop & { lat: number; lng: number }, index: 
       background: #FAF8F5;
       color: #1A1814;
       padding: 0;
-      min-width: 200px;
-      max-width: 260px;
-      border-radius: 4px;
+      min-width: 280px;
+      max-width: 340px;
+      border-radius: 8px;
       overflow: hidden;
-      border: 1px solid #DDD8CE;
+      border: 2px solid #C97B7B;
+      box-shadow: 0 8px 32px rgba(26,24,20,0.25), 0 2px 8px rgba(26,24,20,0.15);
     ">
       <div style="
         background: #C97B7B;
         color: #FAF8F5;
-        font-size: 0.65rem;
+        font-size: 0.7rem;
         font-weight: bold;
-        letter-spacing: 0.1em;
-        padding: 6px 10px;
+        letter-spacing: 0.12em;
+        padding: 10px 14px;
         text-transform: uppercase;
       ">Stop ${index + 1}</div>
       ${photoUrl ? `
         <img src="${photoUrl}" alt="${name}" style="
           width: 100%;
-          height: 120px;
+          height: 160px;
           object-fit: cover;
           display: block;
         " />
       ` : ''}
-      <div style="padding: 10px 12px;">
-        <div style="font-weight: 600; font-size: 14px; color: #1A1814; margin-bottom: 6px;">${name}</div>
-        <div style="font-size: 12px; color: #6B6560; line-height: 1.4;">${escapeHtml(stop.why)}</div>
-        <div style="font-size: 11px; color: #6B6560; margin-top: 6px;">${escapeHtml(stop.arrival_time)} · ~$${stop.estimated_spend}</div>
+      <div style="padding: 14px 16px;">
+        <div style="font-weight: 600; font-size: 16px; color: #1A1814; margin-bottom: 8px; line-height: 1.3;">${name}</div>
+        <div style="font-size: 13px; color: #1A1814; line-height: 1.5; opacity: 0.85;">${escapeHtml(stop.why)}</div>
+        <div style="font-size: 12px; color: #6B6560; margin-top: 10px; font-weight: 500;">${escapeHtml(stop.arrival_time)} · ~$${stop.estimated_spend}</div>
       </div>
     </div>
   `
 }
 
-export function DateMap({ stops, travelMode = 'WALKING', className = '' }: DateMapProps) {
+export function DateMap({ stops, travelMode = 'WALKING', className = '', showExpandButton = true }: DateMapProps) {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
 
   const stopsWithCoords = useMemo(
     () => stops.filter((s): s is DateStop & { lat: number; lng: number } => typeof s.lat === 'number' && typeof s.lng === 'number'),
@@ -104,10 +116,13 @@ export function DateMap({ stops, travelMode = 'WALKING', className = '' }: DateM
       styles: LOVETISM_MAP_STYLE,
       disableDefaultUI: true,
       zoomControl: true,
+      zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_CENTER },
+      fullscreenControl: true,
+      fullscreenControlOptions: { position: google.maps.ControlPosition.RIGHT_TOP },
       mapTypeControl: false,
       scaleControl: false,
       streetViewControl: false,
-      fullscreenControl: false,
+      gestureHandling: 'greedy' as const,
     }),
     []
   )
@@ -140,21 +155,23 @@ export function DateMap({ stops, travelMode = 'WALKING', className = '' }: DateM
     )
   }, [stopsWithCoords, travelMode])
 
+  const mapContainerStyle = { width: '100%', height: MAP_HEIGHT_COMPACT, borderRadius: '12px' }
+  const mapContainerStyleModal = { width: '100%', height: MAP_HEIGHT_MODAL, borderRadius: '12px' }
+
   if (stopsWithCoords.length === 0) {
     return (
       <div
         className={`bg-surface border border-ink/10 rounded-xl flex items-center justify-center ${className}`}
-        style={{ height: 300 }}
+        style={{ height: MAP_HEIGHT_COMPACT }}
       >
         <span className="font-mono text-xs text-ink-muted">Loading map...</span>
       </div>
     )
   }
 
-  return (
-    <div className={`overflow-hidden rounded-xl border border-ink/10 ${className}`}>
-      <GoogleMap
-        mapContainerStyle={MAP_CONTAINER_STYLE}
+  const MapContent = ({ isModal = false }: { isModal?: boolean }) => (
+    <GoogleMap
+        mapContainerStyle={isModal ? mapContainerStyleModal : mapContainerStyle}
         center={center}
         zoom={14}
         options={mapOptions}
@@ -221,6 +238,34 @@ export function DateMap({ stops, travelMode = 'WALKING', className = '' }: DateM
           />
         )}
       </GoogleMap>
-    </div>
+  )
+
+  return (
+    <>
+      <div className={`relative overflow-hidden rounded-xl border border-ink/10 ${className}`}>
+        {showExpandButton && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => setModalOpen(true)}
+            className="absolute top-2 right-2 z-10 h-8 px-2.5 bg-cream/95 hover:bg-cream border border-ink/10 shadow-sm font-mono text-[0.65rem] uppercase tracking-wider"
+          >
+            <Maximize2 className="h-3.5 w-3.5 mr-1.5" />
+            Expand map
+          </Button>
+        )}
+        <MapContent />
+      </div>
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-[95vw] w-full p-0 gap-0 overflow-hidden border-ink/10 rounded-xl [&>button]:right-3 [&>button]:top-3">
+          <DialogTitle className="sr-only">Map</DialogTitle>
+          <div className="w-full" style={{ height: MAP_HEIGHT_MODAL, minHeight: 400 }}>
+            {modalOpen && <MapContent isModal />}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
