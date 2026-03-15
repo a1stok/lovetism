@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
 
   const { data, error } = await supabaseAdmin
     .from('saved_dates')
-    .select('id, title, description, personal_touch, total_estimated_spend, location_name, weather_summary, weather_advice, stops, google_maps_url, created_at')
+    .select('id, title, description, personal_touch, total_estimated_spend, location_name, weather_summary, weather_advice, stops, google_maps_url, partner_name, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
@@ -64,6 +64,7 @@ router.post('/', async (req, res) => {
       weather_advice: weather_advice ?? null,
       stops,
       google_maps_url: google_maps_url ?? null,
+      partner_name: partner_name ?? null,
     })
     .select()
     .single()
