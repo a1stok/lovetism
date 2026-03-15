@@ -16,6 +16,9 @@ import { DateService, type DateItinerary, type WeatherData, type GenerateDatePar
 import { generateGoogleMapsRouteUrl } from '@/core/api/google-maps'
 import { usePreferences, BUDGET_RANGES } from '@/features/preferences'
 import { DateLocationPicker, type SelectedLocation } from './components/date-location-picker'
+import { DateMap } from './components/date-map'
+import { PlacePhotoGallery } from './components/place-photo-gallery'
+import type { DateStop } from '@/core/api/date-service'
 
 const NO_PARTNER_VALUE = '__none__'
 
@@ -29,6 +32,7 @@ export function DateIdeasPage() {
   const [itinerary, setItinerary] = useState<DateItinerary | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [galleryStop, setGalleryStop] = useState<DateStop | null>(null)
   const [copiedLink, setCopiedLink] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -242,7 +246,20 @@ export function DateIdeasPage() {
             )}
           </CardHeader>
 
-          <CardContent className="space-y-1">
+          <CardContent className="space-y-6">
+            {/* Map */}
+            <DateMap
+              stops={itinerary.stops}
+              travelMode={
+                preferences.transport === 'driving'
+                  ? 'DRIVING'
+                  : preferences.transport === 'walking'
+                    ? 'WALKING'
+                    : 'TRANSIT'
+              }
+              className="mt-2"
+            />
+
             {/* Stops timeline */}
             {itinerary.stops.map((stop, index) => (
               <div key={stop.place_id} className="relative pl-8 pb-6 last:pb-2">
@@ -256,16 +273,56 @@ export function DateIdeasPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-ink text-sm">{stop.name}</h4>
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        {stop.google_place_id ? (
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.name)}&query_place_id=${stop.google_place_id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-medium text-ink text-sm hover:text-mauve hover:underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mauve rounded-sm"
+                          >
+                            {stop.name}
+                          </a>
+                        ) : (
+                          <h4 className="font-medium text-ink text-sm">{stop.name}</h4>
+                        )}
+                        {stop.google_place_id && (
+                          <Star className="h-3 w-3 text-amber-400 fill-amber-400 shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-xs text-ink-muted font-mono">
+                        {stop.arrival_time} · {stop.duration_minutes} min · ~${stop.estimated_spend}
+                      </p>
+                      <p className="text-sm text-ink-muted leading-relaxed">{stop.why}</p>
+                    </div>
+
+                    {/* Place Photo (if available) */}
                     {stop.google_place_id && (
-                      <Star className="h-3 w-3 text-amber-400 fill-amber-400" />
+                      <button
+                        onClick={() => setGalleryStop(stop)}
+                        className="group relative flex w-20 h-20 shrink-0 rounded-md overflow-hidden bg-surface border border-ink/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mauve"
+                      >
+                        {stop.photo_reference ? (
+                          <img
+                            src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${stop.photo_reference}&key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}`}
+                            alt={stop.name}
+                            className="object-cover w-full h-full"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-ink-muted/10 flex items-center justify-center">
+                            <MapPin className="h-6 w-6 text-ink-muted/40" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-ink/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                          <span className="text-[0.55rem] font-bold tracking-widest uppercase text-white font-mono text-center leading-tight px-1 drop-shadow-md">
+                            Browse<br/>Pictures
+                          </span>
+                        </div>
+                      </button>
                     )}
                   </div>
-                  <p className="text-xs text-ink-muted font-mono">
-                    {stop.arrival_time} · {stop.duration_minutes} min · ~${stop.estimated_spend}
-                  </p>
-                  <p className="text-sm text-ink-muted leading-relaxed">{stop.why}</p>
                 </div>
               </div>
             ))}
@@ -331,6 +388,17 @@ export function DateIdeasPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Photo Gallery Modal */}
+      {galleryStop && (
+        <PlacePhotoGallery
+          isOpen={!!galleryStop}
+          onClose={() => setGalleryStop(null)}
+          placeName={galleryStop.name}
+          googlePlaceId={galleryStop.google_place_id}
+          photoReferences={galleryStop.photo_references || (galleryStop.photo_reference ? [galleryStop.photo_reference] : [])}
+        />
       )}
     </div>
   )

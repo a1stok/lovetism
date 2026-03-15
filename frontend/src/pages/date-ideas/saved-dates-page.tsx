@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Heart, ExternalLink, Copy, Trash2, MapPin, CloudSun } from 'lucide-react'
-import { DateService, type SavedDate } from '@/core/api/date-service'
+import { DateService, type SavedDate, type DateStop } from '@/core/api/date-service'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { DateMap } from './components/date-map'
+import { PlacePhotoGallery } from './components/place-photo-gallery'
 
 export function SavedDatesPage() {
   const [dates, setDates] = useState<SavedDate[]>([])
@@ -13,6 +15,7 @@ export function SavedDatesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [galleryStop, setGalleryStop] = useState<DateStop | null>(null)
 
   const loadDates = async () => {
     try {
@@ -136,7 +139,16 @@ export function SavedDatesPage() {
                 )}
               </CardHeader>
 
-              <CardContent className="space-y-1">
+              <CardContent className="space-y-6">
+                {/* Map */}
+                {Array.isArray(date.stops) && (date.stops as SavedDate['stops']).some((s) => s.lat != null && s.lng != null) && (
+                  <DateMap
+                    stops={date.stops as DateStop[]}
+                    travelMode="WALKING"
+                    className="rounded-lg overflow-hidden border border-ink/5"
+                  />
+                )}
+
                 {/* Stops */}
                 {Array.isArray(date.stops) && (date.stops as SavedDate['stops']).map((stop, index) => (
                   <div key={`${date.id}-stop-${index}`} className="relative pl-8 pb-4 last:pb-2">
@@ -146,11 +158,51 @@ export function SavedDatesPage() {
                     <div className="absolute left-1.5 top-1 w-5 h-5 rounded-full bg-mauve/10 border-2 border-mauve/30 flex items-center justify-center">
                       <span className="text-[0.6rem] font-mono font-bold text-mauve">{index + 1}</span>
                     </div>
-                    <div>
-                      <h4 className="font-medium text-ink text-sm">{stop.name}</h4>
-                      <p className="text-xs text-ink-muted font-mono">
-                        {stop.arrival_time} · {stop.duration_minutes} min · ~${stop.estimated_spend}
-                      </p>
+                    <div className="flex items-start gap-4">
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          {stop.google_place_id ? (
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.name)}&query_place_id=${stop.google_place_id}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-medium text-ink text-sm hover:text-mauve hover:underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mauve rounded-sm"
+                            >
+                              {stop.name}
+                            </a>
+                          ) : (
+                            <h4 className="font-medium text-ink text-sm">{stop.name}</h4>
+                          )}
+                        </div>
+                        <p className="text-xs text-ink-muted font-mono">
+                          {stop.arrival_time} · {stop.duration_minutes} min · ~${stop.estimated_spend}
+                        </p>
+                      </div>
+
+                      {/* Place Photo */}
+                      {stop.google_place_id && (
+                        <button
+                          onClick={() => setGalleryStop(stop as DateStop)}
+                          className="group relative flex w-16 h-16 shrink-0 rounded-md overflow-hidden bg-surface border border-ink/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mauve"
+                        >
+                          {stop.photo_reference ? (
+                            <img
+                              src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${stop.photo_reference}&key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}`}
+                              alt={stop.name}
+                              className="object-cover w-full h-full"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 bg-ink-muted/10 flex items-center justify-center">
+                              <MapPin className="h-5 w-5 text-ink-muted/40" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-ink/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                            <span className="text-[0.45rem] font-bold tracking-widest uppercase text-white font-mono text-center leading-tight px-1 drop-shadow-md">
+                              Browse<br/>Pictures
+                            </span>
+                          </div>
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -229,6 +281,17 @@ export function SavedDatesPage() {
         confirmText="Remove"
         isDestructive
       />
+
+      {/* Photo Gallery Modal */}
+      {galleryStop && (
+        <PlacePhotoGallery
+          isOpen={!!galleryStop}
+          onClose={() => setGalleryStop(null)}
+          placeName={galleryStop.name}
+          googlePlaceId={galleryStop.google_place_id}
+          photoReferences={galleryStop.photo_references || (galleryStop.photo_reference ? [galleryStop.photo_reference] : [])}
+        />
+      )}
     </div>
   )
 }
