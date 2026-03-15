@@ -3,7 +3,7 @@ import type { Profile } from '@/features/auth'
 import imageCompression from 'browser-image-compression'
 
 export const ProfileService = {
-  async updateProfile(userId: string, updates: Partial<Omit<Profile, 'id' | 'updated_at'>>) {
+  async updateProfile(userId: string, updates: Partial<Omit<Profile, 'id'>>) {
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)
@@ -38,7 +38,10 @@ export const ProfileService = {
       .from('avatars')
       .getPublicUrl(filePath)
 
-    // Update profile record
-    return this.updateProfile(userId, { avatar_url: publicUrl })
+    // Update profile record (updated_at forces cache-bust on next display)
+    return this.updateProfile(userId, {
+      avatar_url: publicUrl,
+      updated_at: new Date().toISOString(),
+    })
   }
 }

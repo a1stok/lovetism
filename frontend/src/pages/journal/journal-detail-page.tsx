@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, Link } from '@tanstack/react-router'
-import { ArrowLeft, Plus, ChevronLeft, ChevronRight, Home, ChevronRight as ChevronRightIcon, Folder, FileText, Maximize2, Minimize2 } from 'lucide-react'
+import { ArrowLeft, Plus, ChevronLeft, ChevronRight, Home, ChevronRight as ChevronRightIcon, Folder, FileText, Maximize2, Minimize2, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     DropdownMenu,
@@ -9,6 +9,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { FileTree } from '@/components/journal/file-tree'
+import { InlineEditor } from '@/components/ui/inline-editor'
 import { RichTextEditor } from '@/components/journal/rich-text-editor'
 import { JournalService } from './api/journal-service'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
@@ -27,6 +28,7 @@ export function JournalDetailPage() {
     const [isFullScreen, setIsFullScreen] = useState(false)
     const [openFolders, setOpenFolders] = useState<Set<string>>(new Set())
     const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null)
+    const [editingJournalName, setEditingJournalName] = useState(false)
 
     // Fetch journal + nodes from Supabase
     useEffect(() => {
@@ -101,6 +103,19 @@ export function JournalDetailPage() {
             }
             return item
         })
+    }
+
+    const handleRenameJournal = async (newName: string) => {
+        const trimmed = newName.trim()
+        if (!trimmed || !journal) return
+        setJournal(prev => prev ? { ...prev, name: trimmed } : null)
+        setEditingJournalName(false)
+        try {
+            await JournalService.updateJournal(journal.id, { name: trimmed })
+        } catch (err: unknown) {
+            console.error('Failed to rename journal:', err)
+            setJournal(prev => prev ? { ...prev, name: journal.name } : null)
+        }
     }
 
     const handleRename = async (id: string, newName: string) => {
@@ -251,9 +266,30 @@ export function JournalDetailPage() {
                             {breadcrumbs.map((crumb, i) => (
                                 <div key={i} className="flex items-center gap-1.5">
                                     {i > 0 && <ChevronRightIcon className="h-3 w-3 opacity-50" />}
-                                    <span className={cn(i === breadcrumbs.length - 1 && "text-ink font-medium")}>
-                                        {crumb.name}
-                                    </span>
+                                    {i === 1 && editingJournalName ? (
+                                        <InlineEditor
+                                            value={journal.name}
+                                            onSave={handleRenameJournal}
+                                            onCancel={() => setEditingJournalName(false)}
+                                            className="text-ink font-medium min-w-[100px]"
+                                        />
+                                    ) : i === 1 ? (
+                                        <div className="flex items-center gap-0.5 group">
+                                            <span className="text-ink font-medium">{crumb.name}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditingJournalName(true)}
+                                                className="p-0.5 text-ink-muted/40 hover:text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity rounded"
+                                                title="Rename journal"
+                                            >
+                                                <Pencil className="h-3 w-3" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <span className={cn(i === breadcrumbs.length - 1 && "text-ink font-medium")}>
+                                            {crumb.name}
+                                        </span>
+                                    )}
                                 </div>
                             ))}
                         </nav>
@@ -322,13 +358,34 @@ export function JournalDetailPage() {
                         {breadcrumbs.map((crumb, i) => (
                             <div key={i} className="flex items-center gap-1.5 shrink-0">
                                 {i > 0 && <ChevronRightIcon className="h-3.5 w-3.5 opacity-50" />}
-                                {crumb.href !== '#' ? (
-                                    <Link
-                                        to={crumb.href}
-                                        className="hover:text-ink hover:bg-surface/50 px-2 py-1 rounded transition-colors"
-                                    >
-                                        {crumb.name}
-                                    </Link>
+                                {i === 1 && editingJournalName ? (
+                                    <div className="flex items-center gap-1 min-w-[120px]">
+                                        <InlineEditor
+                                            value={journal.name}
+                                            onSave={handleRenameJournal}
+                                            onCancel={() => setEditingJournalName(false)}
+                                            className="text-ink font-medium px-2 py-1 min-w-[100px]"
+                                        />
+                                    </div>
+                                ) : crumb.href !== '#' ? (
+                                    <div className="flex items-center gap-0.5 group">
+                                        <Link
+                                            to={crumb.href}
+                                            className="hover:text-ink hover:bg-surface/50 px-2 py-1 rounded transition-colors"
+                                        >
+                                            {crumb.name}
+                                        </Link>
+                                        {i === 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditingJournalName(true)}
+                                                className="p-0.5 text-ink-muted/40 hover:text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity rounded"
+                                                title="Rename journal"
+                                            >
+                                                <Pencil className="h-3 w-3" />
+                                            </button>
+                                        )}
+                                    </div>
                                 ) : (
                                     <span className="text-ink font-medium px-2 py-1">{crumb.name}</span>
                                 )}

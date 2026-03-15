@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { Card } from '@/components/ui/card'
 import { Pencil, Upload, Check, BookOpen, Trash2 } from 'lucide-react'
 import { InlineEditor } from '@/components/ui/inline-editor'
@@ -13,6 +13,7 @@ const INITIAL_VISIBLE_COUNT = 6
 
 export function JournalPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [journals, setJournals] = useState<JournalRow[]>([])
@@ -23,18 +24,30 @@ export function JournalPage() {
   const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [savingNameId, setSavingNameId] = useState<string | null>(null)
+  const savingRef = useRef(false)
 
-  // Fetch journals from Supabase on mount
+  // Fetch journals on mount and when user loads
   useEffect(() => {
-    loadJournals()
+    if (user) loadJournals()
+  }, [user])
+
+  // Refetch when user returns to this tab (catches navigate-back + tab switch)
+  useEffect(() => {
+    const onFocus = () => loadJournals()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [])
+
 
   const loadJournals = async () => {
     try {
       setIsLoading(true)
       setError(null)
       const data = await JournalService.fetchJournals()
-      setJournals(data)
+      // Only show own journals for now; hide partner-shared journals
+      const own = (data ?? []).filter((j) => j.user_id === user?.id)
+      setJournals(own)
     } catch (err: unknown) {
       console.error('Failed to fetch journals:', err)
       setError(err instanceof Error ? err.message : 'Failed to load journals')
@@ -51,13 +64,19 @@ export function JournalPage() {
   }
 
   const handleCreateJournal = async () => {
-    if (!user) return
+    if (!user) {
+      setError('Please sign in to create a journal')
+      return
+    }
     try {
       setIsCreating(true)
+      setError(null)
       const newJournal = await JournalService.createJournal('Untitled Journal', user.id)
-      setJournals(prev => [newJournal, ...prev])
+      setJournals((prev) => [newJournal, ...prev])
+      navigate({ to: '/journal/$journalId', params: { journalId: newJournal.id } })
     } catch (err: unknown) {
       console.error('Failed to create journal:', err)
+      setError(err instanceof Error ? err.message : 'Failed to create journal')
     } finally {
       setIsCreating(false)
     }
@@ -83,17 +102,23 @@ export function JournalPage() {
       setEditingId(null)
       return
     }
-    // Optimistic update
+    setEditingId(null)
+    savingRef.current = true
+    setSavingNameId(id)
     setJournals(prev => prev.map(j =>
       j.id === id ? { ...j, name: trimmed } : j
     ))
-    setEditingId(null)
     try {
-      await JournalService.updateJournal(id, { name: trimmed })
+      const updated = await JournalService.updateJournal(id, { name: trimmed })
+      setJournals(prev => prev.map(j =>
+        j.id === id ? { ...j, name: updated.name } : j
+      ))
     } catch (err: unknown) {
       console.error('Failed to persist journal name:', err)
-      // Revert on failure by reloading
       loadJournals()
+    } finally {
+      savingRef.current = false
+      setSavingNameId(null)
     }
   }
 
@@ -199,6 +224,11 @@ export function JournalPage() {
         </div>
 
         <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
+          {error && (
+            <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-sm max-w-sm">
+              <p className="font-mono text-[0.7rem] text-red-600">{error}</p>
+            </div>
+          )}
           <div className="w-20 h-20 rounded-2xl bg-blush/30 flex items-center justify-center mb-6">
             <BookOpen className="h-9 w-9 text-mauve/60" />
           </div>
@@ -242,6 +272,12 @@ export function JournalPage() {
                 to="/journal/$journalId"
                 params={{ journalId: journal.id }}
                 className="block"
+                onClick={(e) => {
+                  if (editingId === journal.id || savingNameId || savingRef.current) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                  }
+                }}
               >
                 <Card className="group overflow-hidden rounded-2xl transition-all duration-200 hover:shadow-lg flex flex-col h-full bg-white border-ink/5">
                   {/* Journal Name Section - Top */}
@@ -262,6 +298,7 @@ export function JournalPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-1">
+                        {journal.user_id === user?.id && (
                         <button
                           onClick={(e) => {
                             e.preventDefault()
@@ -280,6 +317,7 @@ export function JournalPage() {
                             <Pencil className="h-4 w-4" />
                           )}
                         </button>
+                        )}
                         {journal.user_id === user?.id && (
                           <button
                             type="button"

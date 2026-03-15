@@ -67,6 +67,11 @@ function FileTreeItem({
         }
     }, [isEditing])
 
+    // Sync editName when item.name changes externally (e.g. after rename from another tab)
+    useEffect(() => {
+        if (!isEditing) setEditName(item.name)
+    }, [item.name, isEditing])
+
     // Auto-trigger rename for newly created items
     useEffect(() => {
         if (newlyCreatedId === item.id) {

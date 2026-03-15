@@ -1,6 +1,6 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface InlineEditorProps {
   value: string
@@ -10,6 +10,8 @@ interface InlineEditorProps {
 }
 
 export function InlineEditor({ value, onSave, onCancel, className }: InlineEditorProps) {
+  const cancelRequestedRef = useRef(false)
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -36,17 +38,28 @@ export function InlineEditor({ value, onSave, onCancel, className }: InlineEdito
         }
         if (event.key === 'Escape') {
           event.preventDefault()
+          cancelRequestedRef.current = true
           onCancel()
           return true
         }
         return false
       },
+      handleDOMEvents: {
+        blur: (view) => {
+          if (cancelRequestedRef.current) {
+            cancelRequestedRef.current = false
+            return
+          }
+          const text = view.state.doc.textContent.trim()
+          if (text) onSave(text)
+        },
+      },
     },
   })
 
-  // Update content if value changes externally
+  // Update content if value changes externally (e.g. after switching to another item)
   useEffect(() => {
-    if (editor && value !== editor.getText()) {
+    if (editor && !editor.isFocused && value !== editor.getText()) {
       editor.commands.setContent(value)
     }
   }, [value, editor])

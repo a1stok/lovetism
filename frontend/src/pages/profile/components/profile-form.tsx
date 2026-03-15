@@ -23,6 +23,7 @@ export function ProfileForm() {
     if (profile) {
       setFirstName(profile.first_name || '')
       setLastName(profile.last_name || '')
+      setNickname(profile.nickname || '')
     }
   }, [profile])
 
@@ -60,7 +61,11 @@ export function ProfileForm() {
       setSuccess(true)
       await refreshProfile()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to update profile')
+      const msg = err instanceof Error ? err.message : 'Failed to update profile'
+      const isNicknameTaken =
+        typeof msg === 'string' &&
+        (msg.includes('unique') || msg.includes('duplicate') || msg.includes('nickname'))
+      setError(isNicknameTaken ? 'That nickname is already taken. Try another.' : msg)
     } finally {
       setIsLoading(false)
     }
@@ -80,7 +85,13 @@ export function ProfileForm() {
   }
 
   // Show pending preview, or existing avatar, or initials
+  // Add cache-bust param so browser fetches fresh image after upload (same URL, new file)
   const displayAvatarUrl = avatarPreview || profile?.avatar_url
+  const avatarSrc = displayAvatarUrl
+    ? displayAvatarUrl.startsWith('blob:')
+      ? displayAvatarUrl
+      : `${displayAvatarUrl}?t=${profile?.updated_at || '0'}`
+    : null
 
   return (
     <div className="max-w-2xl w-full mx-auto space-y-8">
@@ -105,9 +116,9 @@ export function ProfileForm() {
             <div className="col-span-1 flex flex-col items-center gap-4">
               <div className="relative group cursor-pointer">
                 <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-ink/10 bg-black/5">
-                  {displayAvatarUrl ? (
+                  {avatarSrc ? (
                     <img 
-                      src={displayAvatarUrl} 
+                      src={avatarSrc} 
                       alt="Avatar" 
                       className="w-full h-full object-cover"
                     />
