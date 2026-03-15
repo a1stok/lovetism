@@ -237,13 +237,14 @@ ${JSON.stringify(
     photo_reference: p.photo_reference,
     name: p.name,
     one_liner: p.one_liner,
+    date_description: p.date_description,
     price_level: p.price_level
   })), 
   null, 2
 )}
 
 Rules:
-- Pick exactly 3 places from the list above. Use only place ids, google_place_ids, photo_reference, and names from the list.
+- Pick exactly 3 places from the list above. Use only place ids, google_place_ids, photo_reference, and names from the list. Use one_liner and date_description to write rich descriptions.
 - Total estimated spend must be under $${budget}.
 - First place: dinner or main activity. Second: transition. Third: dessert/drinks or wind-down.
 - Consider travel between stops (${transport}).
@@ -262,7 +263,7 @@ Return ONLY valid JSON, no markdown:
       "name": "place name",
       "arrival_time": "7:00 PM",
       "duration_minutes": 60,
-      "why": "personalized reason",
+      "why": "2-3 sentences: personalized reason why this place fits the couple, weave in one_liner/date_description. For stops 2 and 3, add a brief transition (e.g. 'After dinner, take a short walk to...') to connect to the previous stop.",
       "estimated_spend": 25
     }
   ],

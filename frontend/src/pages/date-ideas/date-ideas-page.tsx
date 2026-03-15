@@ -267,7 +267,7 @@ export function DateIdeasPage() {
 
             {/* Stops timeline */}
             {itinerary.stops.map((stop, index) => (
-              <div key={stop.place_id} className="relative pl-8 pb-6 last:pb-2">
+              <div key={stop.place_id} className="relative pl-8 pb-5 last:pb-2">
                 {/* Timeline line */}
                 {index < itinerary.stops.length - 1 && (
                   <div className="absolute left-[13px] top-7 bottom-0 w-px bg-mauve/20" />
