@@ -263,7 +263,7 @@ Return ONLY valid JSON, no markdown:
       "name": "place name",
       "arrival_time": "7:00 PM",
       "duration_minutes": 60,
-      "why": "1-2 short lines max. One personalized reason why this place fits. For stops 2-3, optionally start with a brief transition (e.g. 'After dinner, walk to...'). Be concise, no filler.",
+      "why": "About 1.5 lines: one personalized reason why this place fits, optionally a brief transition for stops 2-3. Concise but not terse.",
       "estimated_spend": 25
     }
   ],
