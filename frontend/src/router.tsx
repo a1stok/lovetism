@@ -13,6 +13,8 @@ import {
   BookOpen,
   Heart,
   User,
+  Sparkles,
+  Archive,
 } from 'lucide-react'
 
 // Pages
@@ -20,6 +22,7 @@ import { LandingPage } from '@/pages/landing/landing-page'
 import { JournalPage } from '@/pages/journal/journal-page'
 import { JournalDetailPage } from '@/pages/journal/journal-detail-page'
 import { DateIdeasPage } from '@/pages/date-ideas/date-ideas-page'
+import { SavedDatesPage } from '@/pages/date-ideas/saved-dates-page'
 import { ProfileLayout } from '@/pages/profile/profile-layout'
 import { ProfileForm } from '@/pages/profile/components/profile-form'
 import { PartnerPage } from '@/pages/profile/partner-page'
@@ -37,7 +40,10 @@ routeContextMap['/journal'] = {
 
 routeContextMap['/date-ideas'] = {
   title: 'Date Ideas',
-  items: [],
+  items: [
+    { name: 'Generate', href: '/date-ideas', icon: Sparkles },
+    { name: 'Saved', href: '/date-ideas/saved', icon: Archive },
+  ],
 }
 
 routeContextMap['/profile'] = {
@@ -101,6 +107,12 @@ const dateIdeasRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/date-ideas',
   component: DateIdeasPage,
+})
+
+const savedDatesRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: '/date-ideas/saved',
+  component: SavedDatesPage,
 })
 
 const profileLayoutRoute = createRoute({
@@ -179,6 +191,7 @@ const routeTree = rootRoute.addChildren([
     journalRoute,
     journalDetailRoute,
     dateIdeasRoute,
+    savedDatesRoute,
     profileLayoutRoute.addChildren([
       profileIndexRoute,
       profileMeRoute,

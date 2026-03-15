@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import { env } from './config/env.js';
 import partnershipsRouter from './routes/partnerships.js';
 import datesRouter from './routes/dates.js';
+import weatherRouter from './routes/weather.js';
+import savedDatesRouter from './routes/saved-dates.js';
 
 dotenv.config();
 
@@ -18,6 +20,8 @@ app.get('/health', (req, res) => {
 
 app.use('/api/partnerships', partnershipsRouter);
 app.use('/api/dates', datesRouter);
+app.use('/api/weather', weatherRouter);
+app.use('/api/saved-dates', savedDatesRouter);
 
 const PORT = env?.PORT ?? process.env.PORT ?? 4000;
 

@@ -80,7 +80,7 @@ async function fetchPlaces(params: {
   const maxPrice = Math.min(4, Math.max(1, Math.ceil(budgetMax / 50)))
   let q = supabaseAdmin
     .from('curated_places')
-    .select('id, name, one_liner, date_description, vibe_labels, best_for, highlights, primary_type, google_rating, price_level, has_outdoor_seating')
+    .select('id, google_place_id, name, one_liner, date_description, vibe_labels, best_for, highlights, primary_type, google_rating, price_level, has_outdoor_seating')
     .not('one_liner', 'is', null)
     .lte('price_level', maxPrice)
     .order('priority_score', { ascending: false, nullsFirst: false })
@@ -184,6 +184,8 @@ router.post('/generate', async (req, res) => {
     budget = 100,
     lat = TORONTO_LAT,
     lng = TORONTO_LNG,
+    locationName = 'Toronto',
+    weather = null,
   } = req.body as {
     partnerId?: string | null
     vibes?: string[]
@@ -192,6 +194,8 @@ router.post('/generate', async (req, res) => {
     budget?: number
     lat?: number
     lng?: number
+    locationName?: string
+    weather?: { temperature: number; condition: string; icon: string; feelsLike: number; windSpeed: number } | null
   }
 
   const [journalsText, places] = await Promise.all([
@@ -205,7 +209,11 @@ router.post('/generate', async (req, res) => {
     }),
   ])
 
-  const prompt = `You are a romantic date planner for Toronto.
+  const weatherContext = weather
+    ? `\nCurrent weather at ${locationName}: ${weather.temperature}°C (feels like ${weather.feelsLike}°C), ${weather.condition}, wind ${weather.windSpeed} km/h.\nConsider this when planning — suggest indoor spots if rainy/cold, patios/rooftops if sunny/warm, warm cafes if cold. Provide practical weather-based outfit and planning advice.`
+    : ''
+
+  const prompt = `You are a romantic date planner for ${locationName}.
 
 Journal context (what each person has shared):
 ${journalsText}
@@ -215,16 +223,18 @@ Preferences:
 - Transport: ${transport}
 - Indoor/Outdoor: ${indoorOutdoor}
 - Budget: $${budget} total for both people
+${weatherContext}
 
-Available places (pick exactly 3 from this list):
+Available places (pick exactly 3 from this list — each has a google_place_id you MUST include in your response):
 ${JSON.stringify(places.slice(0, 25), null, 2)}
 
 Rules:
-- Pick exactly 3 places from the list above. Use only place ids and names from the list.
+- Pick exactly 3 places from the list above. Use only place ids, google_place_ids, and names from the list.
 - Total estimated spend must be under $${budget}.
 - First place: dinner or main activity. Second: transition. Third: dessert/drinks or wind-down.
 - Consider travel between stops (${transport}).
 - Personalize using journal context when possible.
+- Include practical weather-based advice as bullet points.
 
 Return ONLY valid JSON, no markdown:
 {
@@ -233,6 +243,7 @@ Return ONLY valid JSON, no markdown:
   "stops": [
     {
       "place_id": "uuid from list",
+      "google_place_id": "google_place_id from list",
       "name": "place name",
       "arrival_time": "7:00 PM",
       "duration_minutes": 60,
@@ -241,7 +252,8 @@ Return ONLY valid JSON, no markdown:
     }
   ],
   "total_estimated_spend": 75,
-  "personal_touch": "one sentence from their journals if relevant"
+  "personal_touch": "one sentence from their journals if relevant",
+  "weather_advice": ["practical tip about what to wear or prepare based on weather", "another tip"]
 }`
 
   const geminiRes = await fetch(
