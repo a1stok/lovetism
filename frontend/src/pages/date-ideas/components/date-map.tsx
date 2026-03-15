@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { GoogleMap, Marker, DirectionsRenderer, InfoWindow } from '@react-google-maps/api'
+import { GoogleMap, Marker, DirectionsRenderer, Polyline, InfoWindow } from '@react-google-maps/api'
 import { Maximize2 } from 'lucide-react'
 import {
   Dialog,
@@ -38,6 +38,25 @@ interface DateMapProps {
   className?: string
   /** When true, shows expand button and supports modal. Default true for inline embeds. */
   showExpandButton?: boolean
+}
+
+const OSRM_PROFILE: Record<TravelMode, string> = {
+  WALKING: 'foot',
+  DRIVING: 'driving',
+  TRANSIT: 'foot',
+}
+
+/** Fetches road-following route from OSRM when Google Directions fails. */
+async function fetchOsrmRoute(
+  points: { lat: number; lng: number }[],
+  profile: string
+): Promise<{ lat: number; lng: number }[] | null> {
+  const coords = points.map((p) => `${p.lng},${p.lat}`).join(';')
+  const url = `https://router.project-osrm.org/route/v1/${profile}/${coords}?overview=full&geometries=geojson`
+  const res = await fetch(url)
+  const data = await res.json()
+  if (data.code !== 'Ok' || !data.routes?.[0]?.geometry?.coordinates) return null
+  return data.routes[0].geometry.coordinates.map(([lng, lat]: [number, number]) => ({ lat, lng }))
 }
 
 function escapeHtml(s: string): string {
@@ -96,6 +115,8 @@ function buildInfoContent(stop: DateStop & { lat: number; lng: number }, index: 
 
 export function DateMap({ stops, travelMode = 'WALKING', className = '', showExpandButton = true }: DateMapProps) {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null)
+  const [directionsFailed, setDirectionsFailed] = useState(false)
+  const [osrmPath, setOsrmPath] = useState<{ lat: number; lng: number }[] | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
 
@@ -130,6 +151,11 @@ export function DateMap({ stops, travelMode = 'WALKING', className = '', showExp
   useEffect(() => {
     if (stopsWithCoords.length < 2 || typeof google === 'undefined') return
 
+    setDirections(null)
+    setDirectionsFailed(false)
+    setOsrmPath(null)
+    let cancelled = false
+
     const service = new google.maps.DirectionsService()
     const origin = stopsWithCoords[0]
     const destination = stopsWithCoords[stopsWithCoords.length - 1]
@@ -145,14 +171,27 @@ export function DateMap({ stops, travelMode = 'WALKING', className = '', showExp
         waypoints,
         travelMode: google.maps.TravelMode[travelMode],
       },
-      (result, status) => {
+      async (result, status) => {
         if (status === google.maps.DirectionsStatus.OK && result) {
-          setDirections(result)
+          if (!cancelled) {
+            setDirections(result)
+            setDirectionsFailed(false)
+          }
         } else {
-          setDirections(null)
+          const path = stopsWithCoords.map((s) => ({ lat: s.lat, lng: s.lng }))
+          const osrm = await fetchOsrmRoute(path, OSRM_PROFILE[travelMode])
+          if (!cancelled) {
+            setDirections(null)
+            setDirectionsFailed(true)
+            setOsrmPath(osrm)
+          }
         }
       }
     )
+
+    return () => {
+      cancelled = true
+    }
   }, [stopsWithCoords, travelMode])
 
   const mapContainerStyle = { width: '100%', height: MAP_HEIGHT_COMPACT, borderRadius: '12px' }
@@ -234,6 +273,20 @@ export function DateMap({ stops, travelMode = 'WALKING', className = '', showExp
                 strokeOpacity: 0.9,
                 strokeWeight: 4,
               },
+            }}
+          />
+        )}
+        {!directions && directionsFailed && stopsWithCoords.length >= 2 && (
+          <Polyline
+            path={
+              osrmPath ??
+              stopsWithCoords.map((s) => ({ lat: s.lat, lng: s.lng }))
+            }
+            options={{
+              geodesic: !osrmPath,
+              strokeColor: '#C97B7B',
+              strokeOpacity: 0.9,
+              strokeWeight: 4,
             }}
           />
         )}
