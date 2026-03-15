@@ -1,15 +1,16 @@
 # Lovetism
 
-AI-powered date planning app for couples. Generate personalized date itineraries, save favorites, sync past dates with partners, and keep shared journals.
+AI-powered date planning app for couples. Generate personalized date itineraries from your journals, save favorites, sync past dates with partners, and keep shared journals. The AI picks 3 stops (opener, main event, closer), factors in weather and both partners' preferences, and returns fully routed itineraries with arrival times and spend estimates.
 
 ## Tech Stack
 
 | Layer | Stack |
 |-------|-------|
-| Frontend | React 19, TypeScript, Vite, TanStack Router, Tailwind, shadcn/ui, TipTap |
-| Backend | Express, Supabase (Auth + Postgres + Storage) |
-| AI | Groq (Llama 3.3 70B) for date generation |
-| Maps | Google Places API, Directions API, OSRM fallback |
+| Frontend | React 19, TypeScript, Vite, TanStack Router, Tailwind, Radix UI, shadcn/ui, TipTap |
+| Backend | Node.js, Express 5, TypeScript |
+| Database | Supabase (PostgreSQL, Auth, Storage, RLS), PostGIS for geospatial queries |
+| AI | Groq (Llama 3.3 70B) for date generation; Gemini for place enrichment & backfill |
+| Maps | Google Places, Directions API, Maps JS API; OSRM fallback for routes |
 | Weather | Open-Meteo |
 
 ## Quick Start
@@ -18,8 +19,9 @@ AI-powered date planning app for couples. Generate personalized date itineraries
 
 - Node.js 18+
 - Supabase project
-- Groq API key
-- Google Places API key (with Places + Directions enabled)
+- Groq API key (date generation)
+- Gemini API key (place enrichment, `populate-places`, `backfill-vibes`)
+- Google Places API key (Places + Directions enabled)
 
 ### 1. Clone & Install
 
@@ -51,6 +53,7 @@ SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 GROQ_API_KEY=your_groq_key
+GEMINI_API_KEY=your_gemini_key   # for populate-places, backfill-vibes
 ```
 
 ### 3. Database
@@ -126,9 +129,14 @@ lovely/
 |---------|----------|
 | Supabase | Auth, DB, Storage |
 | Groq | Date idea generation (Llama 3.3 70B) |
-| Google Places | Place search, photos, Directions |
+| Gemini | Place enrichment, vibe extraction, `populate-places`, `backfill-vibes` |
+| Google Places | Place search, photos, Directions, Maps |
 | Open-Meteo | Weather (no key) |
 | OSRM | Map route fallback when Directions fails (no key) |
+
+## About
+
+Lovetism builds personalized itineraries from your journals. Curated places are pre-seeded into Supabase (Google Places + Gemini for vibe labels); the app queries the local DB first for speed and cost efficiency. When partners are linked, the AI reads from both journals so recommendations reflect both people. Journals use a visibility system (private / partner) so the AI only reads what you've shared.
 
 ## License
 
