@@ -64,7 +64,6 @@ router.post('/', async (req, res) => {
       weather_advice: weather_advice ?? null,
       stops,
       google_maps_url: google_maps_url ?? null,
-      partner_name: partner_name ?? null,
     })
     .select()
     .single()

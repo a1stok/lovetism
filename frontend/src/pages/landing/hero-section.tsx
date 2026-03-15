@@ -9,7 +9,6 @@ export function HeroSection({ onOpenAuth }: { onOpenAuth: () => void }) {
           <div className="relative flex flex-col justify-center overflow-hidden bg-ink">
             <video
               src="/videos/vid2.mp4"
-              poster="/images/upload-default.png"
               autoPlay
               loop
               muted

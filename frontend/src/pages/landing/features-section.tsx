@@ -1,7 +1,4 @@
-import { useRef, useState } from 'react'
-
 interface Feature {
-  video: string
   image: string
   eyebrow: string
   title: string
@@ -10,24 +7,21 @@ interface Feature {
 
 const features: Feature[] = [
   {
-    video: '/videos/flowers-left.mp4',
-    image: '/images/landing/date-ideas.png',
+    image: '/images/landing/01-date-ideas.svg',
     eyebrow: '01',
     title: 'Date Ideas',
     description:
       'Personalized suggestions for dates, surprises, and special moments — tailored to you.',
   },
   {
-    video: '/videos/vid2.mp4',
-    image: '/images/landing/memories-journal.png',
+    image: '/images/landing/02-journal.svg',
     eyebrow: '02',
     title: 'Memories Journal',
     description:
       'Capture memories and milestones in a beautiful private space that grows with you.',
   },
   {
-    video: '/videos/flowers-right.mp4',
-    image: '/images/landing/couple-profiles.png',
+    image: '/images/landing/03-couple-profiles.svg',
     eyebrow: '03',
     title: 'Couple Profiles',
     description:
@@ -36,48 +30,18 @@ const features: Feature[] = [
 ]
 
 function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-
-  const handleMouseEnter = () => {
-    videoRef.current?.play().catch(() => {})
-    setIsPlaying(true)
-  }
-
-  const handleMouseLeave = () => {
-    videoRef.current?.pause()
-    setIsPlaying(false)
-  }
-
-  const handleClick = () => {
-    if (isPlaying) {
-      videoRef.current?.pause()
-      setIsPlaying(false)
-    } else {
-      videoRef.current?.play().catch(() => {})
-      setIsPlaying(true)
-    }
-  }
-
   return (
     <div
-      className={`feature-card group h-full flex flex-col cursor-pointer ${
+      className={`feature-card group h-full flex flex-col ${
         index > 0 ? 'border-t md:border-t-0 md:border-l border-divider' : ''
       }`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleClick}
     >
-      {/* Video */}
-      <div className="aspect-[4/3] overflow-hidden bg-ink/5 relative">
-        <video
-          ref={videoRef}
-          src={feature.video}
-          poster={feature.image}
-          muted
-          playsInline
-          loop
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+      {/* Image */}
+      <div className="aspect-[4/3] overflow-hidden bg-[#FBF8F5] flex items-center justify-center p-10">
+        <img
+          src={feature.image}
+          alt={feature.title}
+          className="w-full max-w-[160px] h-auto transition-transform duration-700 group-hover:scale-110"
         />
       </div>
 
@@ -115,7 +79,7 @@ export function FeaturesSection() {
         </div>
       </div>
 
-      {/* Feature cards — video + text side by side vertically in grid */}
+      {/* Feature cards — image + text */}
       <div className="full-bleed-divider">
         <div className="landing-container">
           <div className="grid md:grid-cols-3 gap-0">
