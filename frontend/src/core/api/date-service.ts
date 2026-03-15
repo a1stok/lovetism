@@ -28,6 +28,7 @@ export interface DateItinerary {
 export interface SavedDate extends DateItinerary {
   id: string
   google_maps_url?: string
+  partner_name?: string | null
   created_at: string
 }
 
@@ -69,7 +70,7 @@ export const DateService = {
     return apiClient.get('/api/saved-dates')
   },
 
-  async saveDate(itinerary: DateItinerary & { google_maps_url?: string }): Promise<SavedDate> {
+  async saveDate(itinerary: DateItinerary & { google_maps_url?: string; partner_name?: string | null }): Promise<SavedDate> {
     return apiClient.post('/api/saved-dates', itinerary)
   },
 

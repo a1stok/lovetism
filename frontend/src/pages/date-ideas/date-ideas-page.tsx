@@ -91,10 +91,15 @@ export function DateIdeasPage() {
   const handleSave = async () => {
     if (!itinerary) return
     setSaving(true)
+    const partner = selectedPartner && selectedPartner !== NO_PARTNER_VALUE
+      ? activePartners.find((p) => p.partnerId === selectedPartner)
+      : null
+    const partnerName = partner ? getPartnerDisplayName(partner) : null
     try {
       await DateService.saveDate({
         ...itinerary,
         google_maps_url: mapsUrl,
+        partner_name: partnerName ?? undefined,
       })
       setSaved(true)
     } catch (e: unknown) {
