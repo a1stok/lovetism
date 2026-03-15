@@ -44,9 +44,8 @@ class ApiClient {
       (error: AxiosError<ApiError>) => {
         // Handle common errors
         if (error.response?.status === 401) {
-          // Handle unauthorized - clear auth and redirect
           this.clearAuthToken()
-          window.location.href = '/login'
+          window.location.href = '/'
         }
         return Promise.reject(error)
       },
