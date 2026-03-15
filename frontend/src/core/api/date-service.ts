@@ -33,6 +33,13 @@ export interface StopFeedback {
   feedback?: string | null
 }
 
+export interface LinkedDateFeedback {
+  id: string
+  user_id: string
+  user_avatar_url?: string | null
+  stop_feedback?: StopFeedback[] | null
+}
+
 export interface SavedDate extends DateItinerary {
   id: string
   google_maps_url?: string
@@ -41,6 +48,8 @@ export interface SavedDate extends DateItinerary {
   partner_avatar_url?: string | null
   status?: 'saved' | 'completed'
   stop_feedback?: StopFeedback[] | null
+  linked_saved_date_id?: string | null
+  linked_date?: LinkedDateFeedback | null
   created_at: string
 }
 
@@ -91,7 +100,40 @@ export const DateService = {
     return apiClient.patch(`/api/saved-dates/${id}/complete`, feedback ? { feedback } : {})
   },
 
+  async updateFeedback(id: string, feedback: StopFeedback[]): Promise<SavedDate> {
+    return apiClient.patch(`/api/saved-dates/${id}/feedback`, { feedback })
+  },
+
   async deleteSavedDate(id: string): Promise<void> {
     return apiClient.delete(`/api/saved-dates/${id}`)
+  },
+}
+
+export interface SyncRequest {
+  id: string
+  from_user_id: string
+  from_user_name: string | null
+  from_user_avatar_url: string | null
+  saved_date_id: string
+  saved_date: { title: string; description?: string; stops?: unknown[]; partner_name?: string; total_estimated_spend?: number; location_name?: string } | null
+  status: string
+  created_at: string
+}
+
+export const SyncRequestService = {
+  async list(): Promise<{ requests: SyncRequest[] }> {
+    return apiClient.get('/api/sync-requests')
+  },
+
+  async create(savedDateId: string): Promise<{ id: string }> {
+    return apiClient.post('/api/sync-requests', { saved_date_id: savedDateId })
+  },
+
+  async accept(id: string): Promise<{ saved_date: SavedDate; linked_to: string }> {
+    return apiClient.post(`/api/sync-requests/${id}/accept`)
+  },
+
+  async reject(id: string): Promise<{ status: string }> {
+    return apiClient.post(`/api/sync-requests/${id}/reject`)
   },
 }

@@ -2,21 +2,96 @@ import { useState, useEffect } from 'react'
 import { useLocation, Link } from '@tanstack/react-router'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Heart, ExternalLink, Copy, Trash2, MapPin, CloudSun, User, Check } from 'lucide-react'
+import { Heart, ExternalLink, Copy, Trash2, MapPin, CloudSun, User, Check, RefreshCw, Pencil, Plus } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { DateService, type SavedDate, type DateStop, type StopFeedback } from '@/core/api/date-service'
+import { DateService, SyncRequestService, type SavedDate, type DateStop, type StopFeedback, type StopFeedbackRating } from '@/core/api/date-service'
 import { useAuth } from '@/features/auth/context/use-auth'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { Input } from '@/components/ui/input'
 import { DateMap } from './components/date-map'
 import { DateFeedbackModal } from './components/date-feedback-modal'
 import { PlacePhotoGallery } from './components/place-photo-gallery'
 
 type DateTab = 'saved' | 'past'
+
+function StopFeedbackEditor({
+  stopName,
+  currentRating,
+  currentText,
+  ratings,
+  onSave,
+  onRemove,
+  onCancel,
+  isSaving,
+}: {
+  stopName: string
+  currentRating: StopFeedbackRating
+  currentText: string
+  ratings: { value: StopFeedbackRating; label: string; emoji: string }[]
+  onSave: (rating: StopFeedbackRating, text: string) => void
+  onRemove?: () => void
+  onCancel: () => void
+  isSaving: boolean
+}) {
+  const [rating, setRating] = useState<StopFeedbackRating>(currentRating)
+  const [text, setText] = useState(currentText)
+
+  return (
+    <div className="space-y-2 p-2 rounded-lg border border-ink/10 bg-surface/50">
+      <p className="font-mono text-[0.65rem] text-ink-muted/70">{stopName}</p>
+      <div className="flex gap-2 flex-wrap">
+        {ratings.map((r) => (
+          <button
+            key={r.value}
+            type="button"
+            onClick={() => setRating(r.value)}
+            className={`w-9 h-9 rounded-full flex items-center justify-center text-base transition-all ${
+              rating === r.value ? 'bg-mauve/20 ring-2 ring-mauve' : 'bg-cream border border-ink/10 hover:border-mauve/30'
+            }`}
+            title={r.label}
+          >
+            {r.emoji}
+          </button>
+        ))}
+      </div>
+      <Input
+        placeholder="Your feedback..."
+        value={text}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setText(e.target.value)}
+        className="input-editorial h-9 text-[0.8rem]"
+      />
+      <div className="flex gap-2">
+        <Button variant="ghost" size="sm" onClick={onCancel} disabled={isSaving} className="text-[0.7rem]">
+          Cancel
+        </Button>
+        {onRemove && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRemove}
+            disabled={isSaving}
+            className="text-[0.7rem] text-red-500 hover:text-red-600"
+          >
+            Remove
+          </Button>
+        )}
+        <Button
+          size="sm"
+          onClick={() => onSave(rating, text)}
+          disabled={isSaving}
+          className="text-[0.7rem] bg-mauve text-cream hover:bg-dusty-rose ml-auto"
+        >
+          {isSaving ? 'Saving…' : 'Save'}
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export function SavedDatesPage() {
   const { profile } = useAuth()
@@ -32,6 +107,19 @@ export function SavedDatesPage() {
   const [feedbackDate, setFeedbackDate] = useState<SavedDate | null>(null)
   const [galleryStop, setGalleryStop] = useState<DateStop | null>(null)
   const [expandedDate, setExpandedDate] = useState<SavedDate | null>(null)
+  const [syncRequests, setSyncRequests] = useState<Awaited<ReturnType<typeof SyncRequestService.list>>['requests']>([])
+  const [syncingId, setSyncingId] = useState<string | null>(null)
+  const [acceptingId, setAcceptingId] = useState<string | null>(null)
+  const [editingStopIndex, setEditingStopIndex] = useState<number | null>(null)
+  const [updatingFeedbackId, setUpdatingFeedbackId] = useState<string | null>(null)
+
+  const RATINGS: { value: StopFeedbackRating; label: string; emoji: string }[] = [
+    { value: 'satisfied', label: 'Satisfied', emoji: '😄' },
+    { value: 'good', label: 'Good', emoji: '🙂' },
+    { value: 'okay', label: 'Okay', emoji: '😐' },
+    { value: 'not_good', label: 'Not good', emoji: '😕' },
+    { value: 'bad', label: 'Bad', emoji: '😞' },
+  ]
 
   const loadDates = async () => {
     try {
@@ -47,8 +135,21 @@ export function SavedDatesPage() {
     }
   }
 
+  const loadSyncRequests = async () => {
+    try {
+      const { requests } = await SyncRequestService.list()
+      setSyncRequests(requests)
+    } catch {
+      setSyncRequests([])
+    }
+  }
+
   useEffect(() => {
     loadDates()
+  }, [tab])
+
+  useEffect(() => {
+    if (tab === 'past') loadSyncRequests()
   }, [tab])
 
   const handleDelete = async () => {
@@ -110,6 +211,101 @@ export function SavedDatesPage() {
   const getPartnerSubtitle = (date: SavedDate) =>
     date.partner_name ? `Date with ${date.partner_name}` : 'Solo date'
 
+  const handleSyncClick = async (date: SavedDate, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    if (!date.partner_id || date.linked_saved_date_id) return
+    try {
+      setSyncingId(date.id)
+      await SyncRequestService.create(date.id)
+      await loadSyncRequests()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to send sync request')
+    } finally {
+      setSyncingId(null)
+    }
+  }
+
+  const handleAcceptSync = async (requestId: string) => {
+    try {
+      setAcceptingId(requestId)
+      await SyncRequestService.accept(requestId)
+      setSyncRequests((prev) => prev.filter((r) => r.id !== requestId))
+      await loadDates()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to accept')
+    } finally {
+      setAcceptingId(null)
+    }
+  }
+
+  const handleRejectSync = async (requestId: string) => {
+    try {
+      await SyncRequestService.reject(requestId)
+      setSyncRequests((prev) => prev.filter((r) => r.id !== requestId))
+    } catch {
+      // ignore
+    }
+  }
+
+  const mergeFeedback = (
+    current: StopFeedback[] | null | undefined,
+    stopIndex: number,
+    newEntry: StopFeedback | null
+  ): StopFeedback[] => {
+    const rest = (current ?? []).filter((f) => f.stop_index !== stopIndex)
+    if (!newEntry) return rest
+    return [...rest, newEntry]
+  }
+
+  const handleSaveFeedback = async (
+    dateId: string,
+    stopIndex: number,
+    rating: StopFeedbackRating,
+    text: string
+  ) => {
+    try {
+      setUpdatingFeedbackId(dateId)
+      const date = dates.find((d) => d.id === dateId) ?? expandedDate
+      if (!date) return
+      const merged = mergeFeedback(date.stop_feedback, stopIndex, {
+        stop_index: stopIndex,
+        rating,
+        feedback: text.trim() || undefined,
+      })
+      const updated = await DateService.updateFeedback(dateId, merged)
+      const preserveLinked = (d: SavedDate) =>
+        d.id === dateId ? { ...updated, linked_date: d.linked_date } : d
+      setDates((prev) => prev.map(preserveLinked))
+      if (expandedDate?.id === dateId)
+        setExpandedDate({ ...updated, linked_date: expandedDate.linked_date })
+      setEditingStopIndex(null)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update feedback')
+    } finally {
+      setUpdatingFeedbackId(null)
+    }
+  }
+
+  const handleRemoveFeedback = async (dateId: string, stopIndex: number) => {
+    try {
+      setUpdatingFeedbackId(dateId)
+      const date = dates.find((d) => d.id === dateId) ?? expandedDate
+      if (!date) return
+      const merged = mergeFeedback(date.stop_feedback, stopIndex, null)
+      const updated = await DateService.updateFeedback(dateId, merged)
+      const preserveLinked = (d: SavedDate) =>
+        d.id === dateId ? { ...updated, linked_date: d.linked_date } : d
+      setDates((prev) => prev.map(preserveLinked))
+      if (expandedDate?.id === dateId)
+        setExpandedDate({ ...updated, linked_date: expandedDate.linked_date })
+      setEditingStopIndex(null)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to remove feedback')
+    } finally {
+      setUpdatingFeedbackId(null)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -153,6 +349,65 @@ export function SavedDatesPage() {
         </div>
       )}
 
+      {tab === 'past' && syncRequests.length > 0 && (
+        <Card className="border-mauve/30 bg-mauve/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="font-mono text-sm font-medium text-ink">Sync requests</CardTitle>
+            <CardDescription className="font-mono text-[0.7rem] text-ink-muted">
+              Your date partner wants to add this date to their past dates too
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {syncRequests.map((req) => (
+              <div
+                key={req.id}
+                className="flex items-center gap-3 p-3 rounded-lg border border-ink/5 bg-cream/50"
+              >
+                {req.from_user_avatar_url ? (
+                  <img
+                    src={req.from_user_avatar_url}
+                    alt=""
+                    className="w-10 h-10 rounded-full object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-mauve/20 flex items-center justify-center shrink-0">
+                    <User className="h-5 w-5 text-mauve/70" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm text-ink">
+                    {req.from_user_name ?? 'Partner'} wants to sync
+                  </p>
+                  <p className="text-xs text-ink-muted truncate">{req.saved_date?.title}</p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleRejectSync(req.id)}
+                    className="text-[0.7rem] border-ink/10"
+                  >
+                    Decline
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleAcceptSync(req.id)}
+                    disabled={!!acceptingId}
+                    className="text-[0.7rem] bg-mauve text-cream hover:bg-dusty-rose"
+                  >
+                    {acceptingId === req.id ? (
+                      <LoadingSpinner className="h-3 w-3" />
+                    ) : (
+                      'Accept'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {dates.length === 0 ? (
         <Card className="border-ink/5">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
@@ -193,8 +448,13 @@ export function SavedDatesPage() {
                           <User className="h-3.5 w-3.5 text-ink-muted/70" />
                         </div>
                       )}
-                      <span className="font-mono text-[0.68rem] text-ink-muted/80 truncate">
+                      <span className="font-mono text-[0.68rem] text-ink-muted/80 truncate flex items-center gap-1.5">
                         {getPartnerSubtitle(date)}
+                        {date.linked_saved_date_id && (
+                          <span className="shrink-0 px-1.5 py-0.5 rounded bg-mauve/10 text-mauve text-[0.55rem] font-mono uppercase">
+                            Synced
+                          </span>
+                        )}
                       </span>
                     </div>
                   </div>
@@ -283,6 +543,24 @@ export function SavedDatesPage() {
                       )}
                     </Button>
                   )}
+                  {tab === 'past' && date.partner_id && !date.linked_saved_date_id && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => handleSyncClick(date, e)}
+                      disabled={!!syncingId}
+                      className="h-7 px-2 text-[0.65rem] text-mauve hover:text-mauve hover:bg-mauve/10 ml-auto"
+                    >
+                      {syncingId === date.id ? (
+                        <LoadingSpinner className="h-3 w-3" />
+                      ) : (
+                        <>
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          Sync with partner
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
             </Card>
@@ -291,7 +569,15 @@ export function SavedDatesPage() {
       )}
 
       {/* Expand modal */}
-      <Dialog open={!!expandedDate} onOpenChange={(open) => !open && setExpandedDate(null)}>
+      <Dialog
+        open={!!expandedDate}
+        onOpenChange={(open) => {
+          if (!open) {
+            setExpandedDate(null)
+            setEditingStopIndex(null)
+          }
+        }}
+      >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0 border-ink/10 rounded-xl">
           <DialogTitle className="sr-only">Date details</DialogTitle>
           {expandedDate && (
@@ -302,8 +588,13 @@ export function SavedDatesPage() {
                     <CardTitle className="font-serif text-xl font-light text-ink">
                       {expandedDate.title}
                     </CardTitle>
-                    <CardDescription className="font-mono text-[0.7rem] text-ink-muted/70 mt-1">
+                    <CardDescription className="font-mono text-[0.7rem] text-ink-muted/70 mt-1 flex items-center gap-2">
                       {getPartnerSubtitle(expandedDate)}
+                      {expandedDate.linked_saved_date_id && (
+                        <span className="px-2 py-0.5 rounded bg-mauve/10 text-mauve text-[0.65rem] font-mono uppercase tracking-wider">
+                          Synced
+                        </span>
+                      )}
                     </CardDescription>
                     {expandedDate.description && (
                       <p className="font-mono text-[0.72rem] text-ink-muted/80 mt-2">
@@ -358,6 +649,10 @@ export function SavedDatesPage() {
                 {Array.isArray(expandedDate.stops) &&
                   (expandedDate.stops as SavedDate['stops']).map((stop, index) => {
                     const fb = expandedDate.stop_feedback?.find((f) => f.stop_index === index)
+                    const linkedFb = expandedDate.linked_date?.stop_feedback?.find(
+                      (f: { stop_index: number }) => f.stop_index === index
+                    )
+                    const hasFeedback = fb?.feedback || linkedFb?.feedback
                     return (
                     <div
                       key={`${expandedDate.id}-stop-${index}`}
@@ -391,6 +686,11 @@ export function SavedDatesPage() {
                                 {getFeedbackEmoji(fb.rating)}
                               </span>
                             )}
+                            {linkedFb && (
+                              <span className="text-base animate-in fade-in duration-200" title={linkedFb.rating}>
+                                {getFeedbackEmoji(linkedFb.rating)}
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs text-ink-muted font-mono">
                             {stop.arrival_time} · {stop.duration_minutes} min · ~$
@@ -399,26 +699,83 @@ export function SavedDatesPage() {
                           {stop.why && (
                             <p className="text-sm text-ink-muted leading-relaxed mt-1">{stop.why}</p>
                           )}
-                          {fb?.feedback && (
-                            <div className="flex items-start gap-2 mt-2 pt-2 border-t border-ink/5">
-                              {profile?.avatar_url ? (
-                                <img
-                                  src={profile.avatar_url}
-                                  alt=""
-                                  className="w-8 h-8 rounded-full object-cover shrink-0 border border-ink/10"
-                                />
-                              ) : (
-                                <div className="w-8 h-8 rounded-full bg-mauve/20 flex items-center justify-center shrink-0">
-                                  <User className="h-4 w-4 text-mauve/70" />
-                                </div>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <p className="font-mono text-[0.65rem] uppercase tracking-wider text-ink-muted/70 mb-0.5">
-                                  Feedback
-                                </p>
-                                <p className="text-sm text-ink-muted leading-relaxed font-mono">
-                                  {fb.feedback}
-                                </p>
+                          {(hasFeedback || (tab === 'past' && (editingStopIndex === index || !fb))) && (
+                            <div className="mt-2 pt-2 border-t border-ink/5">
+                              <p className="font-mono text-[0.65rem] uppercase tracking-wider text-ink-muted/70 mb-2">
+                                Feedback
+                              </p>
+                              <div className="space-y-2">
+                                {tab === 'past' && editingStopIndex === index ? (
+                                  <StopFeedbackEditor
+                                    stopName={stop.name}
+                                    currentRating={fb?.rating ?? 'okay'}
+                                    currentText={fb?.feedback ?? ''}
+                                    ratings={RATINGS}
+                                    onSave={(rating, text) =>
+                                      handleSaveFeedback(expandedDate.id, index, rating, text)
+                                    }
+                                    onRemove={fb ? () => handleRemoveFeedback(expandedDate.id, index) : undefined}
+                                    onCancel={() => setEditingStopIndex(null)}
+                                    isSaving={updatingFeedbackId === expandedDate.id}
+                                  />
+                                ) : (
+                                  <>
+                                    {fb && (
+                                      <div className="flex items-start gap-2 group">
+                                        {profile?.avatar_url ? (
+                                          <img
+                                            src={profile.avatar_url}
+                                            alt=""
+                                            className="w-8 h-8 rounded-full object-cover shrink-0 border border-ink/10"
+                                          />
+                                        ) : (
+                                          <div className="w-8 h-8 rounded-full bg-mauve/20 flex items-center justify-center shrink-0">
+                                            <User className="h-4 w-4 text-mauve/70" />
+                                          </div>
+                                        )}
+                                        <p className="text-sm text-ink-muted leading-relaxed font-mono flex-1 min-w-0">
+                                          {fb.feedback || getFeedbackEmoji(fb.rating)}
+                                        </p>
+                                        {tab === 'past' && (
+                                          <button
+                                            onClick={() => setEditingStopIndex(index)}
+                                            className="shrink-0 p-1 rounded text-ink-muted/50 hover:text-mauve hover:bg-mauve/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            title="Edit feedback"
+                                          >
+                                            <Pencil className="h-3.5 w-3.5" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                    {!fb && tab === 'past' && (
+                                      <button
+                                        onClick={() => setEditingStopIndex(index)}
+                                        className="flex items-center gap-1.5 text-[0.7rem] font-mono text-mauve hover:text-mauve/80"
+                                      >
+                                        <Plus className="h-3.5 w-3.5" />
+                                        Add feedback
+                                      </button>
+                                    )}
+                                    {linkedFb && expandedDate.linked_date && (
+                                      <div className="flex items-start gap-2">
+                                        {expandedDate.linked_date.user_avatar_url ? (
+                                          <img
+                                            src={expandedDate.linked_date.user_avatar_url}
+                                            alt=""
+                                            className="w-8 h-8 rounded-full object-cover shrink-0 border border-ink/10"
+                                          />
+                                        ) : (
+                                          <div className="w-8 h-8 rounded-full bg-mauve/20 flex items-center justify-center shrink-0">
+                                            <User className="h-4 w-4 text-mauve/70" />
+                                          </div>
+                                        )}
+                                        <p className="text-sm text-ink-muted leading-relaxed font-mono flex-1 min-w-0">
+                                          {linkedFb.feedback || getFeedbackEmoji(linkedFb.rating)}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
                               </div>
                             </div>
                           )}
@@ -521,6 +878,26 @@ export function SavedDatesPage() {
                       )}
                     </Button>
                   )}
+                  {expandedDate.status === 'completed' &&
+                    expandedDate.partner_id &&
+                    !expandedDate.linked_saved_date_id && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSyncClick(expandedDate)}
+                        disabled={!!syncingId}
+                        className="border-mauve/30 text-mauve hover:bg-mauve/10 text-[0.7rem]"
+                      >
+                        {syncingId === expandedDate.id ? (
+                          <LoadingSpinner className="h-3.5 w-3.5 mr-1.5" />
+                        ) : (
+                          <>
+                            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                            Sync with partner
+                          </>
+                        )}
+                      </Button>
+                    )}
                 </div>
 
                 <p className="font-mono text-[0.6rem] text-ink-muted/40 pt-2">
