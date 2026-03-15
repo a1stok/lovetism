@@ -263,7 +263,7 @@ Return ONLY valid JSON, no markdown:
       "name": "place name",
       "arrival_time": "7:00 PM",
       "duration_minutes": 60,
-      "why": "2-3 sentences: personalized reason why this place fits the couple, weave in one_liner/date_description. For stops 2 and 3, add a brief transition (e.g. 'After dinner, take a short walk to...') to connect to the previous stop.",
+      "why": "1-2 short lines max. One personalized reason why this place fits. For stops 2-3, optionally start with a brief transition (e.g. 'After dinner, walk to...'). Be concise, no filler.",
       "estimated_spend": 25
     }
   ],
