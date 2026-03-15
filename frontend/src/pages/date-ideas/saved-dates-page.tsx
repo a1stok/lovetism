@@ -148,6 +148,11 @@ export function SavedDatesPage() {
                   <CardDescription className="font-mono text-[0.68rem] text-ink-muted/80 mt-0.5">
                     {getPartnerSubtitle(date)}
                   </CardDescription>
+                  {date.description && (
+                    <p className="text-xs text-ink-muted/80 mt-1.5 line-clamp-2 leading-relaxed">
+                      {date.description}
+                    </p>
+                  )}
                   {(date.location_name || date.total_estimated_spend) && (
                     <div className="flex items-center gap-2 mt-2 text-[0.65rem] text-ink-muted font-mono">
                       {date.location_name && (
