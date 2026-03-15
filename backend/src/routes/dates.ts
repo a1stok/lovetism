@@ -104,7 +104,16 @@ async function fetchPlaces(params: {
   return filtered.slice(0, 30)
 }
 
-const VIBE_IDS = ['cozy', 'adventurous', 'fancy', 'chill', 'romantic', 'fun', 'cultural', 'foodie'] as const
+const VIBE_LABELS = [
+  'cozy', 'intimate', 'lively', 'loud', 'quiet', 'romantic', 'trendy', 'rustic', 'modern', 'dark', 'bright',
+  'hidden_gem', 'touristy', 'local_favourite', 'upscale', 'casual', 'artsy', 'quirky', 'historic',
+  'waterfront', 'rooftop', 'industrial', 'vintage',
+]
+const BEST_FOR = [
+  'first_date', 'anniversary', 'casual_date', 'special_occasion', 'late_night', 'afternoon',
+  'drinks_only', 'quick_coffee', 'active_date', 'cultural_date', 'foodie_date',
+]
+const ALL_VIBE_IDS = [...VIBE_LABELS, ...BEST_FOR] as const
 
 /** Match free-text description to vibe IDs using AI */
 router.post('/match-vibes', async (req, res) => {
@@ -116,11 +125,11 @@ router.post('/match-vibes', async (req, res) => {
     return res.status(400).json({ message: 'Text required' })
   }
 
-  const prompt = `You analyze date vibe descriptions and map them to these exact vibe IDs: ${VIBE_IDS.join(', ')}.
+  const prompt = `You analyze date vibe descriptions and map them to these exact vibe IDs (use underscores, lowercase): ${ALL_VIBE_IDS.join(', ')}.
 
 User wrote: "${text.trim()}"
 
-Return ONLY a JSON array of matching vibe IDs (subset of the list above). Use lowercase. Example: ["cozy","romantic","foodie"]
+Return ONLY a JSON array of matching vibe IDs (subset of the list above). Use exact IDs. Example: ["cozy","romantic","foodie_date"]
 If nothing matches, return [].`
 
   const geminiRes = await fetch(
@@ -152,7 +161,7 @@ If nothing matches, return [].`
       ? arr
           .filter((v): v is string => typeof v === 'string')
           .map((v) => v.toLowerCase().trim())
-          .filter((v) => VIBE_IDS.includes(v as (typeof VIBE_IDS)[number]))
+          .filter((v) => ALL_VIBE_IDS.includes(v as (typeof ALL_VIBE_IDS)[number]))
       : []
     res.json({ vibes })
   } catch {

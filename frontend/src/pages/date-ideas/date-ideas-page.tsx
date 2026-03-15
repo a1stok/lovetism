@@ -16,6 +16,7 @@ import { DateService, type DateItinerary } from '@/core/api/date-service'
 import { usePreferences, BUDGET_RANGES } from '@/features/preferences'
 
 const DATE_IDEAS_KEY = 'lovetism_date_ideas'
+const NO_PARTNER_VALUE = '__none__'
 
 interface SavedDateIdea extends DateItinerary {
   savedAt?: number
@@ -154,12 +155,15 @@ export function DateIdeasPage() {
             {/* Partner */}
             <div className="space-y-2">
               <Label className="font-mono text-[0.65rem] uppercase text-ink-muted">Partner</Label>
-              <Select value={selectedPartner ?? ''} onValueChange={(v) => setSelectedPartner(v || null)}>
+              <Select
+                value={selectedPartner ?? NO_PARTNER_VALUE}
+                onValueChange={(v) => setSelectedPartner(v === NO_PARTNER_VALUE ? null : v)}
+              >
                 <SelectTrigger className="w-full max-w-xs rounded-lg">
                   <SelectValue placeholder="Partner" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Partner</SelectItem>
+                  <SelectItem value={NO_PARTNER_VALUE}>Partner</SelectItem>
                   {activePartners.map((p) => (
                     <SelectItem key={p.id} value={p.partnerId}>
                       {getPartnerDisplayName(p)}

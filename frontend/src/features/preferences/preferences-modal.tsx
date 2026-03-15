@@ -12,16 +12,20 @@ import { Label } from '@/components/ui/label'
 import { usePreferences, BUDGET_RANGES } from './preferences-context'
 import { DateService } from '@/core/api/date-service'
 
-const VIBES = [
-  { id: 'cozy', label: 'Cozy' },
-  { id: 'adventurous', label: 'Adventurous' },
-  { id: 'fancy', label: 'Fancy' },
-  { id: 'chill', label: 'Chill' },
-  { id: 'romantic', label: 'Romantic' },
-  { id: 'fun', label: 'Fun' },
-  { id: 'cultural', label: 'Cultural' },
-  { id: 'foodie', label: 'Foodie' },
+const VIBE_LABELS = [
+  'cozy', 'intimate', 'lively', 'loud', 'quiet', 'romantic', 'trendy', 'rustic', 'modern', 'dark', 'bright',
+  'hidden_gem', 'touristy', 'local_favourite', 'upscale', 'casual', 'artsy', 'quirky', 'historic',
+  'waterfront', 'rooftop', 'industrial', 'vintage',
 ]
+const BEST_FOR = [
+  'first_date', 'anniversary', 'casual_date', 'special_occasion', 'late_night', 'afternoon',
+  'drinks_only', 'quick_coffee', 'active_date', 'cultural_date', 'foodie_date',
+]
+
+function formatVibeLabel(id: string): string {
+  return id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 
 const TRANSPORT = [
   { id: 'walking', label: 'Walking' },
@@ -88,7 +92,7 @@ export function PreferencesModal({ open, onClose }: PreferencesModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md bg-cream text-ink border-ink/5">
+      <DialogContent className="sm:max-w-lg bg-cream text-ink border-ink/5 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-serif text-3xl font-light text-ink">
             Date preferences
@@ -119,23 +123,47 @@ export function PreferencesModal({ open, onClose }: PreferencesModalProps) {
               </Button>
             </div>
             <p className="font-mono text-[0.6rem] text-ink-muted/70">
-              AI will map your description to the options below. You can also pick manually.
+              AI maps your description to options below. Matches curated_places vibe_labels and best_for.
             </p>
-            <div className="flex flex-wrap gap-2">
-              {VIBES.map((v) => (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => toggleVibe(v.id)}
-                  className={`px-3 py-1.5 text-[0.75rem] rounded-sm border transition-colors ${
-                    vibes.includes(v.id)
-                      ? 'border-mauve bg-blush/20 text-ink'
-                      : 'border-ink/10 hover:border-ink/20 text-ink-muted'
-                  }`}
-                >
-                  {v.label}
-                </button>
-              ))}
+            <div className="space-y-3">
+              <div>
+                <p className="font-mono text-[0.6rem] text-ink-muted/50 mb-1.5">Atmosphere</p>
+                <div className="flex flex-wrap gap-2">
+                  {VIBE_LABELS.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => toggleVibe(id)}
+                      className={`px-3 py-1.5 text-[0.75rem] rounded-sm border transition-colors ${
+                        vibes.includes(id)
+                          ? 'border-mauve bg-blush/20 text-ink'
+                          : 'border-ink/10 hover:border-ink/20 text-ink-muted'
+                      }`}
+                    >
+                      {formatVibeLabel(id)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="font-mono text-[0.6rem] text-ink-muted/50 mb-1.5">Best for</p>
+                <div className="flex flex-wrap gap-2">
+                  {BEST_FOR.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => toggleVibe(id)}
+                      className={`px-3 py-1.5 text-[0.75rem] rounded-sm border transition-colors ${
+                        vibes.includes(id)
+                          ? 'border-mauve bg-blush/20 text-ink'
+                          : 'border-ink/10 hover:border-ink/20 text-ink-muted'
+                      }`}
+                    >
+                      {formatVibeLabel(id)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
           <div className="space-y-2">

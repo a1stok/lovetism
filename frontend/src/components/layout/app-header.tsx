@@ -1,8 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/core/providers/theme-provider'
-import { Moon, Sun, Menu, Settings } from 'lucide-react'
+import { Moon, Sun, Menu } from 'lucide-react'
 import type { Dispatch, SetStateAction } from 'react'
-import { usePreferences } from '@/features/preferences'
 
 interface AppHeaderProps {
   sidebarOpen: boolean
@@ -11,7 +10,6 @@ interface AppHeaderProps {
 
 export function AppHeader({ setSidebarOpen }: AppHeaderProps) {
   const { theme, setTheme } = useTheme()
-  const { openPreferences } = usePreferences()
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light')
@@ -33,15 +31,6 @@ export function AppHeader({ setSidebarOpen }: AppHeaderProps) {
         <div className="flex-1" />
         
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0"
-            onClick={() => setPrefsOpen(true)}
-          >
-            <Settings className="h-5 w-5" />
-            <span className="sr-only">Preferences</span>
-          </Button>
           <Button
             variant="ghost"
             size="icon"
