@@ -3,6 +3,10 @@ import { apiClient } from './client'
 export interface DateStop {
   place_id: string
   google_place_id?: string
+  lat?: number
+  lng?: number
+  photo_reference?: string | null
+  photo_references?: string[] | null
   name: string
   arrival_time: string
   duration_minutes: number
