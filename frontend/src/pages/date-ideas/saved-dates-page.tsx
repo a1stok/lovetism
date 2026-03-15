@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Heart, ExternalLink, Copy, Trash2, MapPin, CloudSun } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { DateService, type SavedDate, type DateStop } from '@/core/api/date-service'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
@@ -16,6 +21,7 @@ export function SavedDatesPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [galleryStop, setGalleryStop] = useState<DateStop | null>(null)
+  const [expandedDate, setExpandedDate] = useState<SavedDate | null>(null)
 
   const loadDates = async () => {
     try {
@@ -41,6 +47,7 @@ export function SavedDatesPage() {
       await DateService.deleteSavedDate(deleteId)
       setDates((prev) => prev.filter((d) => d.id !== deleteId))
       setDeleteId(null)
+      if (expandedDate?.id === deleteId) setExpandedDate(null)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to delete')
     } finally {
@@ -57,6 +64,9 @@ export function SavedDatesPage() {
       window.open(url, '_blank')
     }
   }
+
+  const getPartnerSubtitle = (date: SavedDate) =>
+    date.partner_name ? `Date with ${date.partner_name}` : 'Solo date'
 
   if (isLoading) {
     return (
@@ -94,134 +104,216 @@ export function SavedDatesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
-          {dates.map((date) => (
-            <Card key={date.id} className="border-ink/5 overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {dates.map((date) => {
+            const firstStop = Array.isArray(date.stops) ? (date.stops as SavedDate['stops'])[0] : null
+            const hasPhoto = firstStop?.photo_reference ?? firstStop?.photo_references?.[0]
+            return (
+              <Card
+                key={date.id}
+                className="border-ink/5 overflow-hidden cursor-pointer hover:border-mauve/30 transition-colors group"
+                onClick={() => setExpandedDate(date)}
+              >
+                {/* Compact preview */}
+                <div className="relative">
+                  {hasPhoto ? (
+                    <div className="aspect-[4/3] overflow-hidden bg-surface">
+                      <img
+                        src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${hasPhoto}&key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}`}
+                        alt=""
+                        className="object-cover w-full h-full group-hover:scale-[1.02] transition-transform"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-[4/3] bg-surface flex items-center justify-center">
+                      <Heart className="h-12 w-12 text-mauve/20" />
+                    </div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setDeleteId(date.id)
+                    }}
+                    className="absolute top-2 right-2 h-8 w-8 rounded-full bg-cream/90 hover:bg-red-500/20 hover:text-red-500 text-ink-muted/70"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <CardHeader className="pb-2 pt-3">
+                  <CardTitle className="font-serif text-lg font-light text-ink line-clamp-1">
+                    {date.title}
+                  </CardTitle>
+                  <CardDescription className="font-mono text-[0.68rem] text-ink-muted/80 mt-0.5">
+                    {getPartnerSubtitle(date)}
+                  </CardDescription>
+                  {(date.location_name || date.total_estimated_spend) && (
+                    <div className="flex items-center gap-2 mt-2 text-[0.65rem] text-ink-muted font-mono">
+                      {date.location_name && (
+                        <span className="flex items-center gap-1 truncate">
+                          <MapPin className="h-2.5 w-2.5 shrink-0" />
+                          {date.location_name}
+                        </span>
+                      )}
+                      {date.total_estimated_spend != null && (
+                        <span>~${date.total_estimated_spend}</span>
+                      )}
+                    </div>
+                  )}
+                </CardHeader>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Expand modal */}
+      <Dialog open={!!expandedDate} onOpenChange={(open) => !open && setExpandedDate(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0 border-ink/10 rounded-xl">
+          <DialogTitle className="sr-only">Date details</DialogTitle>
+          {expandedDate && (
+            <Card className="border-0 shadow-none rounded-none">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <CardTitle className="font-serif text-xl font-light text-ink">
-                      {date.title}
+                      {expandedDate.title}
                     </CardTitle>
                     <CardDescription className="font-mono text-[0.7rem] text-ink-muted/70 mt-1">
-                      {date.description}
+                      {getPartnerSubtitle(expandedDate)}
                     </CardDescription>
+                    {expandedDate.description && (
+                      <p className="font-mono text-[0.72rem] text-ink-muted/80 mt-2">
+                        {expandedDate.description}
+                      </p>
+                    )}
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setDeleteId(date.id)}
+                    onClick={() => setDeleteId(expandedDate.id)}
                     className="text-ink-muted/40 hover:text-red-500 shrink-0"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
 
-                {/* Location + weather */}
-                {(date.location_name || date.weather_summary) && (
+                {(expandedDate.location_name || expandedDate.weather_summary) && (
                   <div className="flex items-center gap-2 mt-2 text-xs text-ink-muted font-mono">
-                    {date.location_name && (
+                    {expandedDate.location_name && (
                       <span className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {date.location_name}
+                        {expandedDate.location_name}
                       </span>
                     )}
-                    {date.weather_summary && (
+                    {expandedDate.weather_summary && (
                       <span className="px-2 py-0.5 bg-surface rounded-sm border border-ink/5">
-                        {date.weather_summary}
+                        {expandedDate.weather_summary}
                       </span>
                     )}
                   </div>
                 )}
 
-                {date.personal_touch && (
-                  <p className="text-sm text-ink-muted italic mt-2">{date.personal_touch}</p>
+                {expandedDate.personal_touch && (
+                  <p className="text-sm text-ink-muted italic mt-2">{expandedDate.personal_touch}</p>
                 )}
               </CardHeader>
 
-              <CardContent className="space-y-6">
-                {/* Map */}
-                {Array.isArray(date.stops) && (date.stops as SavedDate['stops']).some((s) => s.lat != null && s.lng != null) && (
-                  <DateMap
-                    stops={date.stops as DateStop[]}
-                    travelMode="WALKING"
-                    className="rounded-lg overflow-hidden border border-ink/5"
-                  />
-                )}
+              <CardContent className="space-y-6 pt-0">
+                {Array.isArray(expandedDate.stops) &&
+                  (expandedDate.stops as SavedDate['stops']).some(
+                    (s) => s.lat != null && s.lng != null
+                  ) && (
+                    <DateMap
+                      stops={expandedDate.stops as DateStop[]}
+                      travelMode="WALKING"
+                      showExpandButton={true}
+                      className="rounded-lg overflow-hidden border border-ink/5"
+                    />
+                  )}
 
-                {/* Stops */}
-                {Array.isArray(date.stops) && (date.stops as SavedDate['stops']).map((stop, index) => (
-                  <div key={`${date.id}-stop-${index}`} className="relative pl-8 pb-4 last:pb-2">
-                    {index < (date.stops as SavedDate['stops']).length - 1 && (
-                      <div className="absolute left-[13px] top-7 bottom-0 w-px bg-mauve/20" />
-                    )}
-                    <div className="absolute left-1.5 top-1 w-5 h-5 rounded-full bg-mauve/10 border-2 border-mauve/30 flex items-center justify-center">
-                      <span className="text-[0.6rem] font-mono font-bold text-mauve">{index + 1}</span>
-                    </div>
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          {stop.google_place_id ? (
-                            <a
-                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.name)}&query_place_id=${stop.google_place_id}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="font-medium text-ink text-sm hover:text-mauve hover:underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mauve rounded-sm"
-                            >
-                              {stop.name}
-                            </a>
-                          ) : (
-                            <h4 className="font-medium text-ink text-sm">{stop.name}</h4>
-                          )}
-                        </div>
-                        <p className="text-xs text-ink-muted font-mono">
-                          {stop.arrival_time} · {stop.duration_minutes} min · ~${stop.estimated_spend}
-                        </p>
-                      </div>
-
-                      {/* Place Photo */}
-                      {stop.google_place_id && (
-                        <button
-                          onClick={() => setGalleryStop(stop as DateStop)}
-                          className="group relative flex w-16 h-16 shrink-0 rounded-md overflow-hidden bg-surface border border-ink/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mauve"
-                        >
-                          {stop.photo_reference ? (
-                            <img
-                              src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${stop.photo_reference}&key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}`}
-                              alt={stop.name}
-                              className="object-cover w-full h-full"
-                            />
-                          ) : (
-                            <div className="absolute inset-0 bg-ink-muted/10 flex items-center justify-center">
-                              <MapPin className="h-5 w-5 text-ink-muted/40" />
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-ink/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
-                            <span className="text-[0.45rem] font-bold tracking-widest uppercase text-white font-mono text-center leading-tight px-1 drop-shadow-md">
-                              Browse<br/>Pictures
-                            </span>
-                          </div>
-                        </button>
+                {Array.isArray(expandedDate.stops) &&
+                  (expandedDate.stops as SavedDate['stops']).map((stop, index) => (
+                    <div
+                      key={`${expandedDate.id}-stop-${index}`}
+                      className="relative pl-8 pb-4 last:pb-2"
+                    >
+                      {index < (expandedDate.stops as SavedDate['stops']).length - 1 && (
+                        <div className="absolute left-[13px] top-7 bottom-0 w-px bg-mauve/20" />
                       )}
+                      <div className="absolute left-1.5 top-1 w-5 h-5 rounded-full bg-mauve/10 border-2 border-mauve/30 flex items-center justify-center">
+                        <span className="text-[0.6rem] font-mono font-bold text-mauve">
+                          {index + 1}
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-4">
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            {stop.google_place_id ? (
+                              <a
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.name)}&query_place_id=${stop.google_place_id}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-medium text-ink text-sm hover:text-mauve hover:underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mauve rounded-sm"
+                              >
+                                {stop.name}
+                              </a>
+                            ) : (
+                              <h4 className="font-medium text-ink text-sm">{stop.name}</h4>
+                            )}
+                          </div>
+                          <p className="text-xs text-ink-muted font-mono">
+                            {stop.arrival_time} · {stop.duration_minutes} min · ~$
+                            {stop.estimated_spend}
+                          </p>
+                        </div>
+
+                        {stop.google_place_id && (
+                          <button
+                            onClick={() => setGalleryStop(stop as DateStop)}
+                            className="group relative flex w-16 h-16 shrink-0 rounded-md overflow-hidden bg-surface border border-ink/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mauve"
+                          >
+                            {stop.photo_reference ? (
+                              <img
+                                src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${stop.photo_reference}&key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}`}
+                                alt={stop.name}
+                                className="object-cover w-full h-full"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 bg-ink-muted/10 flex items-center justify-center">
+                                <MapPin className="h-5 w-5 text-ink-muted/40" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-ink/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                              <span className="text-[0.45rem] font-bold tracking-widest uppercase text-white font-mono text-center leading-tight px-1 drop-shadow-md">
+                                Browse
+                                <br />
+                                Pictures
+                              </span>
+                            </div>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
 
                 <div className="pt-2 border-t border-ink/5">
                   <p className="font-mono text-xs text-ink-muted">
-                    Total: ~${date.total_estimated_spend}
+                    Total: ~${expandedDate.total_estimated_spend}
                   </p>
                 </div>
 
-                {/* Weather advice */}
-                {date.weather_advice && date.weather_advice.length > 0 && (
+                {expandedDate.weather_advice && expandedDate.weather_advice.length > 0 && (
                   <div className="pt-3 border-t border-ink/5">
                     <div className="flex items-center gap-2 mb-2">
                       <CloudSun className="h-3.5 w-3.5 text-mauve" />
-                      <span className="font-mono text-[0.6rem] uppercase text-ink-muted font-medium">Advice</span>
+                      <span className="font-mono text-[0.6rem] uppercase text-ink-muted font-medium">
+                        Advice
+                      </span>
                     </div>
                     <ul className="space-y-1">
-                      {date.weather_advice.map((tip, i) => (
+                      {expandedDate.weather_advice.map((tip, i) => (
                         <li key={i} className="flex items-start gap-2 text-xs text-ink-muted">
                           <span className="text-mauve mt-px">•</span>
                           <span>{tip}</span>
@@ -231,14 +323,13 @@ export function SavedDatesPage() {
                   </div>
                 )}
 
-                {/* Actions */}
                 <div className="pt-3 flex flex-wrap gap-2 border-t border-ink/5">
-                  {date.google_maps_url && (
+                  {expandedDate.google_maps_url && (
                     <>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => window.open(date.google_maps_url!, '_blank')}
+                        onClick={() => window.open(expandedDate.google_maps_url!, '_blank')}
                         className="border-ink/10 text-[0.7rem]"
                       >
                         <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
@@ -247,19 +338,21 @@ export function SavedDatesPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleCopyLink(date.id, date.google_maps_url!)}
+                        onClick={() =>
+                          handleCopyLink(expandedDate.id, expandedDate.google_maps_url!)
+                        }
                         className="border-ink/10 text-[0.7rem]"
                       >
                         <Copy className="h-3.5 w-3.5 mr-1.5" />
-                        {copiedId === date.id ? 'Copied!' : 'Copy link'}
+                        {copiedId === expandedDate.id ? 'Copied!' : 'Copy link'}
                       </Button>
                     </>
                   )}
                 </div>
 
-                {/* Date created */}
                 <p className="font-mono text-[0.6rem] text-ink-muted/40 pt-2">
-                  Saved {new Date(date.created_at).toLocaleDateString('en-US', {
+                  Saved{' '}
+                  {new Date(expandedDate.created_at).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',
@@ -267,9 +360,9 @@ export function SavedDatesPage() {
                 </p>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
 
       <ConfirmationDialog
         isOpen={!!deleteId}
@@ -282,14 +375,16 @@ export function SavedDatesPage() {
         isDestructive
       />
 
-      {/* Photo Gallery Modal */}
       {galleryStop && (
         <PlacePhotoGallery
           isOpen={!!galleryStop}
           onClose={() => setGalleryStop(null)}
           placeName={galleryStop.name}
           googlePlaceId={galleryStop.google_place_id}
-          photoReferences={galleryStop.photo_references || (galleryStop.photo_reference ? [galleryStop.photo_reference] : [])}
+          photoReferences={
+            galleryStop.photo_references ||
+            (galleryStop.photo_reference ? [galleryStop.photo_reference] : [])
+          }
         />
       )}
     </div>
