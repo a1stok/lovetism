@@ -145,8 +145,9 @@ export function JournalPage() {
     if (!deleteId) return
     try {
       setIsDeleting(true)
+      setError(null)
       await JournalService.deleteJournal(deleteId)
-      setJournals(prev => prev.filter(j => j.id !== deleteId))
+      setJournals((prev) => prev.filter((j) => j.id !== deleteId))
       setDeleteId(null)
     } catch (err: unknown) {
       console.error('Failed to delete journal:', err)
@@ -252,7 +253,7 @@ export function JournalPage() {
                             value={journal.name}
                             onSave={(newName) => handleSaveName(journal.id, newName)}
                             onCancel={handleCancelEdit}
-                            className="text-lg font-semibold text-ink"
+                            className="font-serif text-lg font-medium text-ink"
                           />
                         ) : (
                           <h3 className="font-serif text-lg font-medium text-ink truncate">
@@ -279,17 +280,20 @@ export function JournalPage() {
                             <Pencil className="h-4 w-4" />
                           )}
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            setDeleteId(journal.id)
-                          }}
-                          className="shrink-0 p-2 text-ink-muted/40 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
-                          title="Delete Journal"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {journal.user_id === user?.id && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              setDeleteId(journal.id)
+                            }}
+                            className="shrink-0 p-2 text-ink-muted/40 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
+                            title="Delete Journal"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div className="mt-2 flex">

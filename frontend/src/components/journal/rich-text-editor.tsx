@@ -144,6 +144,7 @@ export function RichTextEditor({
         editorProps: {
             attributes: {
                 class: 'prose prose-slate max-w-none focus:outline-none min-h-[500px] px-12 py-10 selection:bg-primary/20',
+                spellcheck: 'false',
             },
             handlePaste: (_view, event) => {
                 const items = Array.from(event.clipboardData?.items || [])

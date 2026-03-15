@@ -43,6 +43,7 @@ export function ConfirmationDialog({
         </DialogHeader>
         <DialogFooter className="mt-6 gap-2 sm:gap-0">
           <Button
+            type="button"
             variant="ghost"
             onClick={onClose}
             disabled={isLoading}
@@ -51,6 +52,7 @@ export function ConfirmationDialog({
             {cancelText}
           </Button>
           <Button
+            type="button"
             variant={isDestructive ? 'destructive' : 'default'}
             onClick={onConfirm}
             disabled={isLoading}

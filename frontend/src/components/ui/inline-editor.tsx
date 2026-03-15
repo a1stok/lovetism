@@ -26,6 +26,7 @@ export function InlineEditor({ value, onSave, onCancel, className }: InlineEdito
     editorProps: {
       attributes: {
         class: 'outline-none border-none ring-0 focus:ring-0 focus:outline-none',
+        spellcheck: 'false',
       },
       handleKeyDown: (view, event) => {
         if (event.key === 'Enter') {
