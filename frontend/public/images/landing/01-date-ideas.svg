@@ -1,0 +1,17 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" rx="20" fill="#FBF8F5"/>
+  <rect x="55" y="52" width="90" height="86" rx="10" fill="none" stroke="#C88080" stroke-width="1.6"/>
+  <rect x="55" y="52" width="90" height="26" rx="10" fill="#E8A0A0"/>
+  <rect x="55" y="67" width="90" height="11" fill="#E8A0A0"/>
+  <line x1="80" y1="44" x2="80" y2="57" stroke="#C88080" stroke-width="2" stroke-linecap="round"/>
+  <line x1="120" y1="44" x2="120" y2="57" stroke="#C88080" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="80" cy="94" r="2.8" fill="#E8A0A0"/>
+  <circle cx="100" cy="94" r="2.8" fill="#E8A0A0"/>
+  <circle cx="120" cy="94" r="2.8" fill="#E8A0A0"/>
+  <circle cx="80" cy="110" r="2.8" fill="#EDD0D0"/>
+  <circle cx="100" cy="110" r="2.8" fill="#EDD0D0"/>
+  <circle cx="120" cy="110" r="2.8" fill="#EDD0D0"/>
+  <circle cx="80" cy="126" r="2.8" fill="#EDD0D0"/>
+  <circle cx="100" cy="126" r="2.8" fill="#EDD0D0"/>
+  <circle cx="120" cy="126" r="2.8" fill="#EDD0D0"/>
+</svg>

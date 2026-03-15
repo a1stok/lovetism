@@ -98,9 +98,5 @@ secrets/
 *.bak
 *.backup
 
-# Media (exclude from commits for now)
-**/images/
-**/videos/
-
 .cursor/
 mds/
