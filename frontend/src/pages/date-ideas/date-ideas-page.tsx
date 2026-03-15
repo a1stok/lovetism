@@ -18,6 +18,7 @@ import { usePreferences, BUDGET_RANGES } from '@/features/preferences'
 import { DateLocationPicker, type SelectedLocation } from './components/date-location-picker'
 import { DateMap } from './components/date-map'
 import { PlacePhotoGallery } from './components/place-photo-gallery'
+import { DateGeneratingOverlay } from './components/date-generating-overlay'
 import type { DateStop } from '@/core/api/date-service'
 
 const NO_PARTNER_VALUE = '__none__'
@@ -25,6 +26,7 @@ const NO_PARTNER_VALUE = '__none__'
 export function DateIdeasPage() {
   const { preferences, openPreferences } = usePreferences()
   const [partnerships, setPartnerships] = useState<Partnership[]>([])
+  const [isLoadingPartners, setIsLoadingPartners] = useState(true)
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null)
   const [location, setLocation] = useState<SelectedLocation | null>(null)
   const [weather, setWeather] = useState<WeatherData | null>(null)
@@ -40,6 +42,7 @@ export function DateIdeasPage() {
     PartnershipService.list()
       .then((r) => setPartnerships(r.partnerships))
       .catch(() => setPartnerships([]))
+      .finally(() => setIsLoadingPartners(false))
   }, [])
 
   const budgetMax = BUDGET_RANGES.find((r) => r.id === preferences.budgetRange)?.max ?? 100
@@ -138,23 +141,33 @@ export function DateIdeasPage() {
           {/* Step 1: Partner */}
           <div className="space-y-2">
             <Label className="font-mono text-[0.65rem] uppercase text-ink-muted">1 · Partner</Label>
-            <Select
-              value={selectedPartner ?? NO_PARTNER_VALUE}
-              onValueChange={(v) => setSelectedPartner(v === NO_PARTNER_VALUE ? null : v)}
-            >
-              <SelectTrigger className="w-full max-w-xs rounded-lg">
-                <SelectValue placeholder="Select partner" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NO_PARTNER_VALUE}>Solo / No partner</SelectItem>
-                {activePartners.map((p) => (
-                  <SelectItem key={p.id} value={p.partnerId}>
-                    {getPartnerDisplayName(p)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {activePartners.length === 0 && (
+            
+            {isLoadingPartners ? (
+              <Select disabled>
+                <SelectTrigger className="w-full max-w-xs rounded-lg opacity-50">
+                  <SelectValue placeholder="Loading..." />
+                </SelectTrigger>
+              </Select>
+            ) : (
+              <Select
+                value={selectedPartner ?? NO_PARTNER_VALUE}
+                onValueChange={(v) => setSelectedPartner(v === NO_PARTNER_VALUE ? null : v)}
+              >
+                <SelectTrigger className="w-full max-w-xs rounded-lg">
+                  <SelectValue placeholder="Select partner" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_PARTNER_VALUE}>Solo / No partner</SelectItem>
+                  {activePartners.map((p) => (
+                    <SelectItem key={p.id} value={p.partnerId}>
+                      {getPartnerDisplayName(p)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {!isLoadingPartners && activePartners.length === 0 && (
               <p className="font-mono text-[0.65rem] text-ink-muted/70">
                 Add partners in Profile → Partner
               </p>
@@ -221,6 +234,9 @@ export function DateIdeasPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Animated generating overlay */}
+      <DateGeneratingOverlay isGenerating={generating} />
 
       {/* Generated Itinerary Result */}
       {itinerary && (
