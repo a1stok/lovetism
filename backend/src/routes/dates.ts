@@ -80,7 +80,7 @@ async function fetchPlaces(params: {
   const maxPrice = Math.min(4, Math.max(1, Math.ceil(budgetMax / 50)))
   let q = supabaseAdmin
     .from('curated_places')
-    .select('id, google_place_id, name, one_liner, date_description, vibe_labels, best_for, highlights, primary_type, google_rating, price_level, has_outdoor_seating')
+    .select('id, google_place_id, lat, lng, photo_reference, photo_references, name, one_liner, date_description, vibe_labels, best_for, highlights, primary_type, google_rating, price_level, has_outdoor_seating')
     .not('one_liner', 'is', null)
     .lte('price_level', maxPrice)
     .order('priority_score', { ascending: false, nullsFirst: false })
@@ -117,8 +117,8 @@ const ALL_VIBE_IDS = [...VIBE_LABELS, ...BEST_FOR] as const
 
 /** Match free-text description to vibe IDs using AI */
 router.post('/match-vibes', async (req, res) => {
-  if (!env.GEMINI_API_KEY) {
-    return res.status(503).json({ message: 'AI not configured' })
+  if (!env.GROQ_API_KEY) {
+    return res.status(503).json({ message: 'AI not configured (Missing GROQ_API_KEY)' })
   }
   const { text } = req.body as { text?: string }
   if (!text || typeof text !== 'string') {
@@ -132,27 +132,31 @@ User wrote: "${text.trim()}"
 Return ONLY a JSON array of matching vibe IDs (subset of the list above). Use exact IDs. Example: ["cozy","romantic","foodie_date"]
 If nothing matches, return [].`
 
-  const geminiRes = await fetch(
-    `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`,
+  const groqRes = await fetch(
+    'https://api.groq.com/openai/v1/chat/completions',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${env.GROQ_API_KEY}`,
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.2, responseMimeType: 'application/json' },
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2,
       }),
     }
   )
 
-  if (!geminiRes.ok) {
-    const err = await geminiRes.text()
-    return res.status(502).json({ message: `AI error: ${err}` })
+  if (!groqRes.ok) {
+    const err = await groqRes.text()
+    return res.status(502).json({ message: `Groq error: ${err}` })
   }
 
-  const json = (await geminiRes.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+  const json = (await groqRes.json()) as {
+    choices?: Array<{ message?: { content?: string } }>
   }
-  const raw = json.candidates?.[0]?.content?.parts?.[0]?.text ?? '[]'
+  const raw = json.choices?.[0]?.message?.content ?? '[]'
   const cleaned = raw.replace(/```json|```/g, '').trim()
 
   try {
@@ -171,8 +175,8 @@ If nothing matches, return [].`
 
 /** Generate date itinerary */
 router.post('/generate', async (req, res) => {
-  if (!env.GEMINI_API_KEY) {
-    return res.status(503).json({ message: 'Date generation not configured' })
+  if (!env.GROQ_API_KEY) {
+    return res.status(503).json({ message: 'Date generation not configured (Missing GROQ_API_KEY)' })
   }
 
   const userId = req.userId!
@@ -226,10 +230,20 @@ Preferences:
 ${weatherContext}
 
 Available places (pick exactly 3 from this list — each has a google_place_id you MUST include in your response):
-${JSON.stringify(places.slice(0, 25), null, 2)}
+${JSON.stringify(
+  places.slice(0, 15).map(p => ({
+    id: p.id,
+    google_place_id: p.google_place_id,
+    photo_reference: p.photo_reference,
+    name: p.name,
+    one_liner: p.one_liner,
+    price_level: p.price_level
+  })), 
+  null, 2
+)}
 
 Rules:
-- Pick exactly 3 places from the list above. Use only place ids, google_place_ids, and names from the list.
+- Pick exactly 3 places from the list above. Use only place ids, google_place_ids, photo_reference, and names from the list.
 - Total estimated spend must be under $${budget}.
 - First place: dinner or main activity. Second: transition. Third: dessert/drinks or wind-down.
 - Consider travel between stops (${transport}).
@@ -244,6 +258,7 @@ Return ONLY valid JSON, no markdown:
     {
       "place_id": "uuid from list",
       "google_place_id": "google_place_id from list",
+      "photo_reference": "photo_reference from list (if available, else null)",
       "name": "place name",
       "arrival_time": "7:00 PM",
       "duration_minutes": 60,
@@ -256,34 +271,54 @@ Return ONLY valid JSON, no markdown:
   "weather_advice": ["practical tip about what to wear or prepare based on weather", "another tip"]
 }`
 
-  const geminiRes = await fetch(
-    `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`,
+  const groqRes = await fetch(
+    'https://api.groq.com/openai/v1/chat/completions',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${env.GROQ_API_KEY}`
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3, responseMimeType: 'application/json' },
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3,
+        response_format: { type: "json_object" }
       }),
     }
   )
 
-  if (!geminiRes.ok) {
-    const err = await geminiRes.text()
-    return res.status(502).json({ message: `Gemini error: ${err}` })
+  if (!groqRes.ok) {
+    const err = await groqRes.text()
+    return res.status(502).json({ message: `Groq error: ${err}` })
   }
 
-  const json = (await geminiRes.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+  const json = (await groqRes.json()) as {
+    choices?: Array<{ message?: { content?: string } }>
   }
-  const text = json.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-  const cleaned = text.replace(/```json|```/g, '').trim()
+  const responseText = json.choices?.[0]?.message?.content ?? ''
+  const cleaned = responseText.replace(/```json|```/g, '').trim()
 
   try {
     const itinerary = JSON.parse(cleaned)
+    if (itinerary.stops && Array.isArray(itinerary.stops)) {
+      itinerary.stops = itinerary.stops.map((stop: { place_id?: string; google_place_id?: string; photo_references?: string[]; lat?: number; lng?: number }) => {
+        const place =
+          places.find((p: { google_place_id: string }) => p.google_place_id === stop.google_place_id) ??
+          places.find((p: { id: string }) => p.id === stop.place_id)
+        if (place) {
+          stop.photo_references = place.photo_references || []
+          stop.lat = Number(place.lat)
+          stop.lng = Number(place.lng)
+        }
+        return stop
+      })
+    }
+    
     res.json(itinerary)
-  } catch {
-    res.status(502).json({ message: 'Invalid response from AI' })
+  } catch (err) {
+    console.error('Failed to parse AI response:', cleaned)
+    res.status(502).json({ message: `Invalid response from AI. Raw response: ${cleaned.substring(0, 200)}...` })
   }
 })
 
