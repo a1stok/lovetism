@@ -1,6 +1,6 @@
 # Lovetism
 
-AI-powered date planning app for couples. Generate personalized date itineraries from your journals, save favorites, sync past dates with partners, and keep shared journals. The AI picks 3 stops (opener, main event, closer), factors in weather and both partners' preferences, and returns fully routed itineraries with arrival times and spend estimates.
+AI-powered date planning app for couples. Generate personalized date itineraries from your journals, save favorites, sync past dates with partners, and keep shared journals. The AI factors in weather and both partners' preferences and returns fully routed itineraries with arrival times and spend estimates.
 
 ## Tech Stack
 
@@ -9,8 +9,8 @@ AI-powered date planning app for couples. Generate personalized date itineraries
 | Frontend | React 19, TypeScript, Vite, TanStack Router, Tailwind, Radix UI, shadcn/ui, TipTap |
 | Backend | Node.js, Express 5, TypeScript |
 | Database | Supabase (PostgreSQL, Auth, Storage, RLS), PostGIS for geospatial queries |
-| AI | Groq (Llama 3.3 70B) for date generation; Gemini for place enrichment & backfill |
-| Maps | Google Places, Directions API, Maps JS API; OSRM fallback for routes |
+| AI | Groq (Llama 3.3 70B) for date generation, Gemini for place enrichment and backfill |
+| Maps | Google Places, Directions API, Maps JS API, OSRM fallback for routes |
 | Weather | Open-Meteo |
 
 ## Quick Start
@@ -26,8 +26,8 @@ AI-powered date planning app for couples. Generate personalized date itineraries
 ### 1. Clone & Install
 
 ```bash
-git clone <repo-url>
-cd lovely
+git clone https://github.com/a1stok/lovetism.git
+cd lovetism
 npm install
 cd frontend && npm install
 cd ../backend && npm install
@@ -75,35 +75,14 @@ cd frontend && npm run dev
 
 App: http://localhost:5173 | API: http://localhost:4000
 
-## Project Structure
-
-```
-lovely/
-├── frontend/           # React SPA
-│   ├── src/
-│   │   ├── components/ # UI, layout, journal
-│   │   ├── features/   # auth, preferences
-│   │   ├── pages/      # journal, date-ideas, profile
-│   │   └── core/       # API clients, providers
-│   └── public/         # images, videos
-├── backend/            # Express API
-│   ├── src/
-│   │   ├── routes/     # dates, saved-dates, sync-requests, partnerships, weather
-│   │   ├── middleware/ # auth
-│   │   └── config/
-│   └── supabase/
-│       └── migrations/ # schema, RLS
-└── README.md
-```
-
 ## Features
 
-- **Date Ideas** – AI-generated itineraries (Groq/Llama) with curated places, map routes (Google Directions + OSRM fallback), weather
-- **Saved Dates** – Save favorites, add partner, toggle past/saved
-- **Past Dates** – Per-stop feedback, sync with partner, link saved↔past
-- **Journal** – Shared journals, folders/files, TipTap rich text, cover images
-- **Profile** – Avatar, nickname, partners by nickname
-- **Partnerships** – Invite by nickname, accept/decline
+- **Date Ideas** AI-generated itineraries (Groq/Llama) with curated places, map routes (Google Directions + OSRM fallback), weather
+- **Saved Dates** Save favorites, add partner, toggle past/saved
+- **Past Dates** Per-stop feedback, sync with partner, link saved to past
+- **Journal** Shared journals, folders/files, TipTap rich text, cover images
+- **Profile** Avatar, nickname, partners by nickname
+- **Partnerships** Invite by nickname, accept/decline
 
 ## Scripts
 
@@ -134,10 +113,3 @@ lovely/
 | Open-Meteo | Weather (no key) |
 | OSRM | Map route fallback when Directions fails (no key) |
 
-## About
-
-Lovetism builds personalized itineraries from your journals. Curated places are pre-seeded into Supabase (Google Places + Gemini for vibe labels); the app queries the local DB first for speed and cost efficiency. When partners are linked, the AI reads from both journals so recommendations reflect both people. Journals use a visibility system (private / partner) so the AI only reads what you've shared.
-
-## License
-
-Private / MIT (adjust as needed)
