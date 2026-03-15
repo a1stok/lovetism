@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation, Link } from '@tanstack/react-router'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Heart, ExternalLink, Copy, Trash2, MapPin, CloudSun, User, Check } from 'lucide-react'
@@ -7,16 +8,20 @@ import {
   DialogContent,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { DateService, type SavedDate, type DateStop } from '@/core/api/date-service'
+import { DateService, type SavedDate, type DateStop, type StopFeedback } from '@/core/api/date-service'
+import { useAuth } from '@/features/auth/context/use-auth'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { DateMap } from './components/date-map'
+import { DateFeedbackModal } from './components/date-feedback-modal'
 import { PlacePhotoGallery } from './components/place-photo-gallery'
 
 type DateTab = 'saved' | 'past'
 
 export function SavedDatesPage() {
-  const [tab, setTab] = useState<DateTab>('saved')
+  const { profile } = useAuth()
+  const location = useLocation()
+  const tab: DateTab = location.pathname.includes('/past') ? 'past' : 'saved'
   const [dates, setDates] = useState<SavedDate[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -24,6 +29,7 @@ export function SavedDatesPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [completingId, setCompletingId] = useState<string | null>(null)
+  const [feedbackDate, setFeedbackDate] = useState<SavedDate | null>(null)
   const [galleryStop, setGalleryStop] = useState<DateStop | null>(null)
   const [expandedDate, setExpandedDate] = useState<SavedDate | null>(null)
 
@@ -70,18 +76,35 @@ export function SavedDatesPage() {
     }
   }
 
-  const handleMarkComplete = async (id: string, e?: React.MouseEvent) => {
+  const handleWentOnDateClick = (date: SavedDate, e?: React.MouseEvent) => {
     e?.stopPropagation()
+    setFeedbackDate(date)
+  }
+
+  const handleFeedbackSubmit = async (feedback: StopFeedback[]) => {
+    if (!feedbackDate) return
     try {
-      setCompletingId(id)
-      await DateService.markDateCompleted(id)
-      setDates((prev) => prev.filter((d) => d.id !== id))
-      if (expandedDate?.id === id) setExpandedDate(null)
+      setCompletingId(feedbackDate.id)
+      await DateService.markDateCompleted(feedbackDate.id, feedback)
+      setDates((prev) => prev.filter((d) => d.id !== feedbackDate.id))
+      if (expandedDate?.id === feedbackDate.id) setExpandedDate(null)
+      setFeedbackDate(null)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to update')
     } finally {
       setCompletingId(null)
     }
+  }
+
+  const getFeedbackEmoji = (rating: string) => {
+    const map: Record<string, string> = {
+      satisfied: '😄',
+      good: '🙂',
+      okay: '😐',
+      not_good: '😕',
+      bad: '😞',
+    }
+    return map[rating] ?? ''
   }
 
   const getPartnerSubtitle = (date: SavedDate) =>
@@ -108,18 +131,18 @@ export function SavedDatesPage() {
           <Button
             variant={tab === 'saved' ? 'default' : 'ghost'}
             size="sm"
-            onClick={() => setTab('saved')}
+            asChild
             className={tab === 'saved' ? 'bg-mauve text-cream hover:bg-dusty-rose' : 'text-ink-muted hover:text-ink'}
           >
-            Saved
+            <Link to="/date-ideas/saved">Saved</Link>
           </Button>
           <Button
             variant={tab === 'past' ? 'default' : 'ghost'}
             size="sm"
-            onClick={() => setTab('past')}
+            asChild
             className={tab === 'past' ? 'bg-mauve text-cream hover:bg-dusty-rose' : 'text-ink-muted hover:text-ink'}
           >
-            Past Dates
+            <Link to="/date-ideas/past">Past Dates</Link>
           </Button>
         </div>
       </div>
@@ -246,7 +269,7 @@ export function SavedDatesPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={(e) => handleMarkComplete(date.id, e)}
+                      onClick={(e) => handleWentOnDateClick(date, e)}
                       disabled={!!completingId}
                       className="h-7 px-2 text-[0.65rem] text-mauve hover:text-mauve hover:bg-mauve/10 ml-auto"
                     >
@@ -333,7 +356,9 @@ export function SavedDatesPage() {
                   )}
 
                 {Array.isArray(expandedDate.stops) &&
-                  (expandedDate.stops as SavedDate['stops']).map((stop, index) => (
+                  (expandedDate.stops as SavedDate['stops']).map((stop, index) => {
+                    const fb = expandedDate.stop_feedback?.find((f) => f.stop_index === index)
+                    return (
                     <div
                       key={`${expandedDate.id}-stop-${index}`}
                       className="relative pl-8 pb-4 last:pb-2"
@@ -361,11 +386,42 @@ export function SavedDatesPage() {
                             ) : (
                               <h4 className="font-medium text-ink text-sm">{stop.name}</h4>
                             )}
+                            {fb && (
+                              <span className="text-base animate-in fade-in duration-200" title={fb.rating}>
+                                {getFeedbackEmoji(fb.rating)}
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs text-ink-muted font-mono">
                             {stop.arrival_time} · {stop.duration_minutes} min · ~$
                             {stop.estimated_spend}
                           </p>
+                          {stop.why && (
+                            <p className="text-sm text-ink-muted leading-relaxed mt-1">{stop.why}</p>
+                          )}
+                          {fb?.feedback && (
+                            <div className="flex items-start gap-2 mt-2 pt-2 border-t border-ink/5">
+                              {profile?.avatar_url ? (
+                                <img
+                                  src={profile.avatar_url}
+                                  alt=""
+                                  className="w-8 h-8 rounded-full object-cover shrink-0 border border-ink/10"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-mauve/20 flex items-center justify-center shrink-0">
+                                  <User className="h-4 w-4 text-mauve/70" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-mono text-[0.65rem] uppercase tracking-wider text-ink-muted/70 mb-0.5">
+                                  Feedback
+                                </p>
+                                <p className="text-sm text-ink-muted leading-relaxed font-mono">
+                                  {fb.feedback}
+                                </p>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {stop.google_place_id && (
@@ -395,7 +451,7 @@ export function SavedDatesPage() {
                         )}
                       </div>
                     </div>
-                  ))}
+                  )})}
 
                 <div className="pt-2 border-t border-ink/5">
                   <p className="font-mono text-xs text-ink-muted">
@@ -451,7 +507,7 @@ export function SavedDatesPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleMarkComplete(expandedDate.id)}
+                      onClick={() => handleWentOnDateClick(expandedDate)}
                       disabled={!!completingId}
                       className="border-mauve/30 text-mauve hover:bg-mauve/10 text-[0.7rem]"
                     >
@@ -490,6 +546,14 @@ export function SavedDatesPage() {
         description="Are you sure you want to remove this saved date? This action cannot be undone."
         confirmText="Remove"
         isDestructive
+      />
+
+      <DateFeedbackModal
+        isOpen={!!feedbackDate}
+        onClose={() => setFeedbackDate(null)}
+        stops={feedbackDate?.stops ?? []}
+        onSubmit={handleFeedbackSubmit}
+        isSubmitting={!!completingId}
       />
 
       {galleryStop && (

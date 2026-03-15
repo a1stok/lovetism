@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
 
   let q = supabaseAdmin
     .from('saved_dates')
-    .select('id, title, description, personal_touch, total_estimated_spend, location_name, weather_summary, weather_advice, stops, google_maps_url, partner_name, partner_id, status, created_at')
+    .select('id, title, description, personal_touch, total_estimated_spend, location_name, weather_summary, weather_advice, stops, google_maps_url, partner_name, partner_id, status, stop_feedback, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
@@ -117,10 +117,13 @@ router.post('/', async (req, res) => {
   res.status(201).json(data)
 })
 
-/** Mark saved date as completed (went on date) */
+/** Mark saved date as completed (went on date), optionally with stop feedback */
 router.patch('/:id/complete', async (req, res) => {
   const userId = req.userId!
   const { id } = req.params
+  const { feedback } = req.body as {
+    feedback?: Array<{ stop_index: number; rating: string; feedback?: string }>
+  }
 
   const { data: existing } = await supabaseAdmin
     .from('saved_dates')
@@ -132,9 +135,14 @@ router.patch('/:id/complete', async (req, res) => {
     return res.status(404).json({ message: 'Saved date not found' })
   }
 
+  const updatePayload: { status: string; stop_feedback?: unknown } = { status: 'completed' }
+  if (Array.isArray(feedback) && feedback.length > 0) {
+    updatePayload.stop_feedback = feedback
+  }
+
   const { data, error } = await supabaseAdmin
     .from('saved_dates')
-    .update({ status: 'completed' })
+    .update(updatePayload)
     .eq('id', id)
     .select()
     .single()

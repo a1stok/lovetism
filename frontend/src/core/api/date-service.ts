@@ -25,6 +25,14 @@ export interface DateItinerary {
   weather_advice?: string[]
 }
 
+export type StopFeedbackRating = 'satisfied' | 'good' | 'okay' | 'not_good' | 'bad'
+
+export interface StopFeedback {
+  stop_index: number
+  rating: StopFeedbackRating
+  feedback?: string | null
+}
+
 export interface SavedDate extends DateItinerary {
   id: string
   google_maps_url?: string
@@ -32,6 +40,7 @@ export interface SavedDate extends DateItinerary {
   partner_id?: string | null
   partner_avatar_url?: string | null
   status?: 'saved' | 'completed'
+  stop_feedback?: StopFeedback[] | null
   created_at: string
 }
 
@@ -78,8 +87,8 @@ export const DateService = {
     return apiClient.post('/api/saved-dates', itinerary)
   },
 
-  async markDateCompleted(id: string): Promise<SavedDate> {
-    return apiClient.patch(`/api/saved-dates/${id}/complete`)
+  async markDateCompleted(id: string, feedback?: StopFeedback[]): Promise<SavedDate> {
+    return apiClient.patch(`/api/saved-dates/${id}/complete`, feedback ? { feedback } : {})
   },
 
   async deleteSavedDate(id: string): Promise<void> {

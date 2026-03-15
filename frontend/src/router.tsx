@@ -15,6 +15,7 @@ import {
   User,
   Sparkles,
   Archive,
+  CalendarCheck,
 } from 'lucide-react'
 
 // Pages
@@ -43,6 +44,7 @@ routeContextMap['/date-ideas'] = {
   items: [
     { name: 'Generate', href: '/date-ideas', icon: Sparkles },
     { name: 'Saved', href: '/date-ideas/saved', icon: Archive },
+    { name: 'Past Dates', href: '/date-ideas/past', icon: CalendarCheck },
   ],
 }
 
@@ -112,6 +114,12 @@ const dateIdeasRoute = createRoute({
 const savedDatesRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/date-ideas/saved',
+  component: SavedDatesPage,
+})
+
+const pastDatesRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: '/date-ideas/past',
   component: SavedDatesPage,
 })
 
@@ -192,6 +200,7 @@ const routeTree = rootRoute.addChildren([
     journalDetailRoute,
     dateIdeasRoute,
     savedDatesRoute,
+    pastDatesRoute,
     profileLayoutRoute.addChildren([
       profileIndexRoute,
       profileMeRoute,
