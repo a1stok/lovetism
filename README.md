@@ -2,6 +2,9 @@
 
 AI-powered date planning app for couples. Generate personalized date itineraries from your journals, save favorites, sync past dates with partners, and keep shared journals. The AI factors in weather and both partners' preferences and returns fully routed itineraries with arrival times and spend estimates.
 
+Check out the [demo and detailed walkthrough](https://kostianvs.xyz).
+*Navigate: Menu → Projects → Lovetism → Case Study*
+
 ## Tech Stack
 
 | Layer | Stack |
